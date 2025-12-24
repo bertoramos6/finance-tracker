@@ -1,5 +1,44 @@
-node_modules/
-.DS_Store
-*.log
+# Environment variables
 .env
+.env.local
+.env.production
+
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Build output
+dist/
+build/
+.vite/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor directories and files
 .vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+coverage/
+.nyc_output/
+
+# Temporary files
+*.tmp
+.cache/
+
+# Personal setup guides (not for public repo)
+SETUP_GUIDE.md
+GOOGLE_OAUTH_SETUP.md
+PHASE3B_QUICKSTART.md
