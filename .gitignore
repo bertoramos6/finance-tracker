@@ -38,7 +38,10 @@ coverage/
 *.tmp
 .cache/
 
-# Personal setup guides (not for public repo)
-SETUP_GUIDE.md
-GOOGLE_OAUTH_SETUP.md
-PHASE3B_QUICKSTART.md
+# SQL debug files (keep only supabase-schema.sql)
+*-fix-*.sql
+*-debug-*.sql
+diagnose-*.sql
+check-*.sql
+transfer-*.sql
+setup-with-*.sql

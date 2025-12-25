@@ -115,26 +115,31 @@ RETURNS void AS $$
 BEGIN
   -- Insert default income categories
   INSERT INTO categories (user_id, type, name, description, is_default) VALUES
-    (p_user_id, 'income', 'Salary', 'Regular salary or wages', true),
-    (p_user_id, 'income', 'Freelance', 'Freelance or contract work', true),
-    (p_user_id, 'income', 'Investments', 'Investment returns', true),
-    (p_user_id, 'income', 'Gifts', 'Monetary gifts received', true),
-    (p_user_id, 'income', 'Other Income', 'Other sources of income', true);
+    (p_user_id, 'income', 'Paycheck', 'Primary income from work', true),
+    (p_user_id, 'income', 'Other income', 'Other income you get (birthday money, etc.)', true);
 
   -- Insert default expense categories
   INSERT INTO categories (user_id, type, name, description, is_default) VALUES
     (p_user_id, 'expense', 'Housing', 'Rent, mortgage, property taxes', true),
     (p_user_id, 'expense', 'Transportation', 'Car, gas, public transit', true),
-    (p_user_id, 'expense', 'Food & Dining', 'Groceries and restaurants', true),
-    (p_user_id, 'expense', 'Utilities', 'Electric, water, internet', true),
-    (p_user_id, 'expense', 'Healthcare', 'Medical expenses and insurance', true),
-    (p_user_id, 'expense', 'Entertainment', 'Movies, games, hobbies', true),
-    (p_user_id, 'expense', 'Shopping', 'Clothing and general shopping', true),
-    (p_user_id, 'expense', 'Education', 'Courses, books, tuition', true),
-    (p_user_id, 'expense', 'Travel', 'Vacations and trips', true),
-    (p_user_id, 'expense', 'Personal Care', 'Haircuts, cosmetics', true),
-    (p_user_id, 'expense', 'Subscriptions', 'Streaming, software, memberships', true),
-    (p_user_id, 'expense', 'Other Expenses', 'Miscellaneous expenses', true);
+    (p_user_id, 'expense', 'Suministros', 'Electricity, garbage, water, heating, phone, wifi, cable...', true),
+    (p_user_id, 'expense', 'Grocery', 'Groceries, pet food...', true),
+    (p_user_id, 'expense', 'Restaurants', 'Restaurantes, comer fuera y pedir a domicilio', true),
+    (p_user_id, 'expense', 'Clothing', 'Clothes and shoes', true),
+    (p_user_id, 'expense', 'Subscription', 'Sportify, Netflix and other types of subscriptions', true),
+    (p_user_id, 'expense', 'Desarrollo personal', 'Libros, suplementos...', true),
+    (p_user_id, 'expense', 'Otros gastos personales', 'Cortes de pelo, cosméticos u otros gastos difícil de categorizar', true),
+    (p_user_id, 'expense', 'Gifts', 'All types of gift giving', true),
+    (p_user_id, 'expense', 'Entertainment', 'Games, movies, concerts...', true),
+    (p_user_id, 'expense', 'Vacation', 'Vacation spendings or savings', true),
+    (p_user_id, 'expense', 'Drinks, Tapas, Tomar Algo', 'Cervecillas y tomar algo por ahí', true),
+    (p_user_id, 'expense', 'Party', 'Salir de fiesta, taxis, ubers de vuelta...', true),
+    (p_user_id, 'expense', 'Efectivo', 'Sacar efectivo', true),
+    (p_user_id, 'expense', 'Planes finde', 'Planes fin de semana (trenes, alojamientos...) (restaurantes y tomar algo van en sus respectivas cuentas, no aquí)', true),
+    (p_user_id, 'expense', 'Golf', 'Gastos de golf', true),
+    (p_user_id, 'expense', 'Impuestos/multas', 'Jodiendas a pagar', true),
+    (p_user_id, 'expense', 'Deporte', 'Gastos relacionados con el deporte (zapatos de correr, ropa, inscripciones de carreras, geles...)', true),
+    (p_user_id, 'expense', 'Glovo', 'Glovos u otros caprichos como tartas de queso y demás (separar de restaurantes)', true);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 

@@ -13,7 +13,8 @@
 </head>
 
 <body>
-    <div class="app-container">
+
+    <div class="app-container" id="app-container">
         <!-- Navigation -->
         <nav class="nav-tabs">
             <button class="nav-tab active" data-tab="entry">
@@ -109,16 +110,25 @@
 
                 <!-- Date Range Filter -->
                 <div class="date-filter">
-                    <div class="filter-group">
-                        <label for="filter-start-date">From</label>
-                        <input type="month" id="filter-start-date">
+                    <div class="quick-filters">
+                        <button class="btn-quick-filter active" data-filter="this-year">This Year</button>
+                        <button class="btn-quick-filter" data-filter="all-time">All Time</button>
+                        <select class="year-selector" id="year-selector">
+                            <!-- Years will be populated by JavaScript -->
+                        </select>
                     </div>
-                    <div class="filter-group">
-                        <label for="filter-end-date">To</label>
-                        <input type="month" id="filter-end-date">
+                    <div class="custom-filter-group">
+                        <div class="filter-group">
+                            <label for="filter-start-date">From</label>
+                            <input type="month" id="filter-start-date">
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-end-date">To</label>
+                            <input type="month" id="filter-end-date">
+                        </div>
+                        <button class="btn-filter" id="apply-filter">Apply</button>
+                        <button class="btn-filter-reset" id="reset-filter">Reset</button>
                     </div>
-                    <button class="btn-filter" id="apply-filter">Apply Filter</button>
-                    <button class="btn-filter-reset" id="reset-filter">Reset</button>
                 </div>
 
                 <!-- Summary Cards -->
@@ -140,9 +150,11 @@
 
                 <!-- Expense Breakdown Table -->
                 <div class="breakdown-section">
-                    <h2 class="section-title">Expense Breakdown by Month</h2>
-                    <div class="table-wrapper" id="breakdown-table-wrapper">
-                        <!-- Table will be populated by JavaScript -->
+                    <h2 class="section-title">Category Breakdown by Month</h2>
+                    <div class="table-wrapper">
+                        <table id="breakdown-table" class="breakdown-table">
+                            <!-- Table will be populated by JavaScript -->
+                        </table>
                     </div>
                 </div>
             </div>
@@ -364,7 +376,43 @@
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <!-- Data Migration Modal -->
+    <div class="modal" id="migration-modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2 class="modal-title">Migrate Local Data</h2>
+            </div>
+
+            <div class="modal-body">
+                <p>We found <strong id="migration-transaction-count">0</strong> transactions and <strong
+                        id="migration-category-count">0</strong> custom categories on this device.</p>
+                <p>Would you like to upload them to the cloud?</p>
+                <div class="migration-note">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="16" x2="12" y2="12" />
+                        <line x1="12" y1="8" x2="12.01" y2="8" />
+                    </svg>
+                    <span>Your data will be safely uploaded and accessible from all your devices.</span>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" id="migration-skip">Skip for Now</button>
+                <button type="button" class="btn-primary" id="migration-confirm">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="17 8 12 3 7 8" />
+                        <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                    Migrate Data
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
 </body>
 
 </html>

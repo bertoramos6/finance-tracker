@@ -1,238 +1,160 @@
-# Finance Tracker
+# Personal Finance Tracker
 
-A modern, feature-rich personal finance tracking application with cloud synchronization and cross-device support.
+A modern, privacy-focused personal finance tracker with cloud sync capabilities. Track your income and expenses across all your devices with a clean, intuitive interface.
 
-![Finance Tracker](https://img.shields.io/badge/status-active-success.svg)
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
+## ✨ Features
 
-## 🌟 Features
+- 📊 **Visual Analytics** - Interactive charts and monthly category breakdowns
+- 💰 **Transaction Management** - Easy income/expense tracking with custom categories
+- 📱 **Cross-Device Sync** - Access your data from phone, tablet, and desktop
+- 🔒 **Privacy-First** - Your data, your control with Supabase backend
+- 🎨 **Modern UI** - Clean, responsive design that works on all devices
+- 📈 **Smart Filtering** - Quick filters for This Year, All Time, or specific years
+- 📋 **Category Breakdown** - Monthly spending analysis by category
+- 💾 **CSV Export** - Download your transaction history anytime
 
-### Core Functionality
-- ✅ **Transaction Management**: Add, edit, and delete income and expense transactions
-- 📊 **Data Visualization**: Interactive charts and graphs powered by Chart.js
-- 📈 **Analytics Dashboard**: Monthly summaries, spending trends, and category breakdowns
-- 💾 **Data Persistence**: Cloud-based storage with offline support
-- 📱 **Cross-Device Sync**: Access your data from any device (PC, iPhone, tablet)
-- 🔐 **Secure Authentication**: Email/password and Google OAuth sign-in
-- 🏷️ **Custom Categories**: Create and manage your own income and expense categories
-- 📤 **CSV Export**: Download your transaction history for external analysis
-
-### Technical Features
-- 🎨 **Modern UI**: Beautiful, responsive design with glassmorphism effects
-- 🌙 **Dark Mode**: Eye-friendly dark color scheme
-- ⚡ **Real-time Sync**: Automatic synchronization across devices
-- 🔒 **Row Level Security**: Your data is protected at the database level
-- 📴 **Offline Support**: Continue working even without internet connection
-
-## 🛠️ Technology Stack
-
-### Frontend
-- **HTML5/CSS3**: Modern semantic markup and styling
-- **JavaScript (ES6+)**: Vanilla JavaScript for application logic
-- **Chart.js**: Data visualization library
-- **Vite**: Build tool and development server
-
-### Backend
-- **Supabase**: PostgreSQL database with built-in authentication
-- **Row Level Security (RLS)**: Database-level access control
-
-### Hosting & Deployment
-- **Vercel**: Frontend hosting with automatic deployments
-- **GitHub**: Version control and CI/CD integration
-
-## 🚀 Getting Started
+## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 16+ and npm
-- Supabase account (free tier available)
-- Git
 
-### Local Development Setup
+- Node.js 16+ installed
+- A Supabase account (free tier works great)
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/finance-tracker.git
-   cd finance-tracker
-   ```
+### 1. Clone & Install
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Configure environment variables**
-   
-   Create a `.env` file in the root directory:
-   ```bash
-   cp .env.example .env
-   ```
-   
-   Edit `.env` and add your Supabase credentials:
-   ```env
-   VITE_SUPABASE_URL=your-project-url
-   VITE_SUPABASE_ANON_KEY=your-anon-key
-   ```
-
-4. **Run development server**
-   ```bash
-   npm run dev
-   ```
-   
-   Open [http://localhost:5173](http://localhost:5173) in your browser.
-
-5. **Build for production**
-   ```bash
-   npm run build
-   ```
-
-## 🗄️ Database Schema
-
-### Tables
-
-#### `categories`
-Stores default and custom user categories.
-
-| Column | Type | Description |
-|--------|------|-------------|
-| id | BIGSERIAL | Primary key |
-| user_id | UUID | Foreign key to auth.users |
-| type | TEXT | 'income' or 'expense' |
-| name | TEXT | Category name |
-| description | TEXT | Optional description |
-| is_default | BOOLEAN | True for default categories |
-| created_at | TIMESTAMPTZ | Creation timestamp |
-
-#### `transactions`
-Stores all user transactions.
-
-| Column | Type | Description |
-|--------|------|-------------|
-| id | BIGSERIAL | Primary key |
-| user_id | UUID | Foreign key to auth.users |
-| type | TEXT | 'income' or 'expense' |
-| amount | DECIMAL(10,2) | Transaction amount |
-| date | DATE | Transaction date |
-| category_id | BIGINT | Foreign key to categories |
-| comment | TEXT | Optional comment |
-| created_at | TIMESTAMPTZ | Creation timestamp |
-| updated_at | TIMESTAMPTZ | Last update timestamp |
-
-### Row Level Security (RLS)
-
-All tables have RLS policies ensuring users can only access their own data:
-- Users can view, insert, update, and delete their own records
-- Default categories cannot be deleted (enforced by policy)
-- All policies use `auth.uid()` for user identification
-
-## 🔐 Authentication
-
-### Supported Methods
-- **Email/Password**: Traditional signup and login
-- **Google OAuth**: One-click sign-in with Google account
-
-### Session Management
-- Sessions persist for 7 days by default
-- Automatic token refresh
-- Secure logout functionality
-
-## 📦 Project Structure
-
-```
-finance-tracker/
-├── index.html              # Main HTML file
-├── app.js                  # Application logic
-├── index.css               # Styles
-├── package.json            # Dependencies
-├── vite.config.js          # Vite configuration
-├── .env                    # Environment variables (not in Git)
-├── .env.example            # Environment template
-├── .gitignore              # Git ignore rules
-└── README.md               # This file
+```bash
+git clone https://github.com/YOUR_USERNAME/finance-tracker.git
+cd finance-tracker
+npm install
 ```
 
-## 🚢 Deployment
+### 2. Set Up Supabase
 
-### Vercel Deployment
+1. Create a new project at [supabase.com](https://supabase.com)
+2. Run the SQL schema in Supabase SQL Editor:
+   - Copy contents of `supabase-schema.sql`
+   - Paste and run in your Supabase SQL Editor
+3. Create your user account in Supabase Dashboard:
+   - Go to **Authentication** → **Users** → **Add user**
+   - Create with your email and password
+   - ✅ Check "Auto Confirm User"
 
-1. **Connect GitHub repository to Vercel**
-   - Go to [vercel.com](https://vercel.com)
-   - Import your GitHub repository
-   - Vercel will auto-detect Vite configuration
+### 3. Configure Environment
 
-2. **Configure environment variables**
-   - Add `VITE_SUPABASE_URL` in Vercel dashboard
-   - Add `VITE_SUPABASE_ANON_KEY` in Vercel dashboard
+```bash
+cp .env.example .env
+```
 
-3. **Deploy**
-   - Automatic deployment on every push to `main` branch
-   - Preview deployments for pull requests
+Edit `.env` with your values:
 
-## 🧪 Testing
+```env
+VITE_SUPABASE_URL=your-project-url
+VITE_SUPABASE_ANON_KEY=your-anon-key
+VITE_USER_EMAIL=your-email@example.com
+VITE_USER_PASSWORD=your-password
+```
 
-### Manual Testing Checklist
-- [ ] Create account with email/password
-- [ ] Sign in with Google OAuth
-- [ ] Add income transaction
-- [ ] Add expense transaction
-- [ ] Edit transaction
-- [ ] Delete transaction
-- [ ] Create custom category
-- [ ] Edit custom category
-- [ ] Delete custom category
-- [ ] Export to CSV
-- [ ] Test cross-device sync (login from different device)
-- [ ] Test offline mode
+### 4. Run Locally
 
-## 📊 Default Categories
+```bash
+npm run dev
+```
 
-### Income Categories
-- Salary
-- Freelance
-- Investments
-- Gifts
-- Other Income
+Visit `http://localhost:5173` 🎉
 
-### Expense Categories
-- Housing
-- Transportation
-- Food & Dining
-- Utilities
-- Healthcare
-- Entertainment
-- Shopping
-- Education
-- Travel
-- Personal Care
-- Subscriptions
-- Other Expenses
+## 📱 Mobile Access
 
-## 🔄 Data Migration
+The app is fully responsive and works great on mobile browsers. Once deployed, simply visit the URL on your phone!
 
-When you first log in after deployment, the app will automatically migrate any existing localStorage data to the cloud:
-1. Detects existing local transactions and categories
-2. Prompts for migration confirmation
-3. Uploads all data to Supabase
-4. Links transactions to your user account
-5. Maintains data integrity and relationships
+## 🌐 Deploy to Production
 
-## 🤝 Contributing
+### Deploy to Vercel (Recommended)
 
-This is a personal project, but suggestions and feedback are welcome! Feel free to open an issue for bugs or feature requests.
+1. Push your code to GitHub
+2. Go to [vercel.com](https://vercel.com) and import your repository
+3. Add environment variables in Vercel dashboard:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+   - `VITE_USER_EMAIL`
+   - `VITE_USER_PASSWORD`
+4. Deploy!
+
+### Deploy to Netlify
+
+1. Push your code to GitHub
+2. Go to [netlify.com](https://netlify.com) and import your repository
+3. Build settings:
+   - Build command: `npm run build`
+   - Publish directory: `dist`
+4. Add environment variables in Netlify dashboard
+5. Deploy!
+
+## 🔧 Tech Stack
+
+- **Frontend**: Vanilla JavaScript, HTML5, CSS3
+- **Build Tool**: Vite
+- **Backend**: Supabase (PostgreSQL + Auth)
+- **Charts**: Chart.js
+- **Hosting**: Vercel/Netlify
+
+## 📖 Usage
+
+### Adding Transactions
+
+1. Click **Add Entry** tab
+2. Select type (Expense/Income)
+3. Enter amount, date, category, and optional comment
+4. Click **Add Transaction**
+
+### Viewing Analytics
+
+1. Click **Overview** tab
+2. Use quick filters: **This Year**, **All Time**, or select a specific year
+3. View charts and monthly category breakdown table
+
+### Managing Categories
+
+1. Click **Categories** tab
+2. Switch between Expense/Income categories
+3. Add custom categories or edit existing ones
+
+### Exporting Data
+
+1. Go to **History** tab
+2. Click **Export CSV**
+3. Save your transaction history
+
+## 🔒 Security Notes
+
+- ✅ `.env` file is git-ignored (never commit secrets!)
+- ✅ Supabase RLS (Row Level Security) protects your data
+- ✅ Only you can access your transactions
+- ✅ Use a strong, unique password
+
+## 🛠️ Development
+
+```bash
+# Install dependencies
+npm install
+
+# Run dev server
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+```
 
 ## 📝 License
 
-MIT License - feel free to use this project for your own personal finance tracking needs.
+MIT License - feel free to use this for your personal finance tracking!
 
 ## 🙏 Acknowledgments
 
-- [Chart.js](https://www.chartjs.org/) for beautiful charts
-- [Supabase](https://supabase.com/) for the amazing backend platform
-- [Vercel](https://vercel.com/) for seamless deployment
-
-## 📧 Contact
-
-For questions or support, please open an issue on GitHub.
+Built with ❤️ for personal finance management
 
 ---
 
-**Built with ❤️ for better personal finance management**
+**Note**: This is a personal finance tracker designed for single-user use. All your data is stored securely in your Supabase database.
