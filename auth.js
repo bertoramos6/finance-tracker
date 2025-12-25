@@ -1,4 +1,4 @@
-// auth.js - Single static user authentication for personal use
+// auth.js - Single static user authentication with password gate
 import { createClient } from '@supabase/supabase-js';
 
 // Initialize Supabase client
@@ -48,7 +48,7 @@ export async function initAuth() {
       email,
       password,
     });
-    
+
     if (error) {
       console.error('[AUTH] Error signing in:', error);
       throw error;
@@ -58,30 +58,39 @@ export async function initAuth() {
     console.log('[AUTH] Successfully signed in as:', currentUser.email);
     return currentUser;
   } catch (error) {
-    console.error('[AUTH] Auth initialization failed:', error);
+    console.error('[AUTH] Error in initAuth:', error);
     throw error;
   }
 }
 
 /**
- * Get the current authenticated user
+ * Get current user
  */
 export function getCurrentUser() {
   return currentUser;
 }
 
 /**
- * Check if user is authenticated
+ * Sign out (for future use)
  */
-export function isAuthenticated() {
-  return currentUser !== null;
+export async function signOut() {
+  try {
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+    
+    currentUser = null;
+    console.log('[AUTH] Successfully signed out');
+  } catch (error) {
+    console.error('[AUTH] Error signing out:', error);
+    throw error;
+  }
 }
 
 /**
- * Listen to Supabase auth state changes
+ * Listen for auth state changes
  */
 export function onAuthStateChange(callback) {
-  return supabase.auth.onAuthStateChange((event, session) => {
+  return supabase.auth.onAuthStateChanged((event, session) => {
     currentUser = session?.user || null;
     callback(event, session);
   });

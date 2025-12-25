@@ -18,6 +18,7 @@ import {
   isMigrationCompleted,
   markMigrationCompleted
 } from './sync.js';
+import { initPasswordGate } from './password-gate.js';
 
 // Application State
 let transactions = [];
@@ -56,49 +57,53 @@ const exportCsvBtn = document.getElementById('export-csv');
 // Initialize App
 async function init() {
   console.log('[INIT] Starting app initialization...');
-  try {
-    // Initialize anonymous authentication
-    console.log('[INIT] Calling initAuth()...');
-    const user = await initAuth();
-    
-    if (!user) {
-      console.error('[INIT] Failed to initialize anonymous session - no user returned');
-      alert('Failed to initialize app. Please check your Supabase configuration and ensure Anonymous authentication is enabled.');
-      return;
+  
+  // Initialize password gate first
+  initPasswordGate(async () => {
+    try {
+      // Initialize authentication
+      console.log('[INIT] Calling initAuth()...');
+      const user = await initAuth();
+      
+      if (!user) {
+        console.error('[INIT] Failed to initialize session - no user returned');
+        alert('Failed to initialize app. Please check your Supabase configuration.');
+        return;
+      }
+      
+      console.log('[INIT] User authenticated:', user.id);
+      console.log('[INIT] User email:', user.email);
+      console.log('[INIT] Full user object:', user);
+      
+      // Show app UI
+      appContainer.style.display = 'block';
+      console.log('[INIT] App container displayed');
+      
+      // Check for local data migration
+      const localData = checkForLocalData();
+      const migrationCompleted = isMigrationCompleted();
+      console.log('[INIT] Migration check:', { hasData: localData.hasData, migrationCompleted });
+      
+      if (localData.hasData && !migrationCompleted) {
+        // Show migration modal
+        console.log('[INIT] Showing migration modal');
+        showMigrationModal(localData);
+      } else {
+        // Load data from cloud
+        console.log('[INIT] Loading cloud data...');
+        await loadCloudData();
+      }
+      
+      // Setup migration event listeners
+      migrateBtnConfirm.addEventListener('click', handleMigrationConfirm);
+      migrateBtnSkip.addEventListener('click', handleMigrationSkip);
+      
+      console.log('[INIT] Initialization complete');
+    } catch (error) {
+      console.error('[INIT] Error initializing app:', error);
+      alert(`Failed to initialize app: ${error.message}\n\nPlease check:\n1. Your .env file has correct Supabase credentials\n2. User account exists in Supabase`);
     }
-    
-    console.log('[INIT] Anonymous user authenticated:', user.id);
-    console.log('[INIT] User email:', user.email);
-    console.log('[INIT] Full user object:', user);
-    
-    // Show app UI
-    appContainer.style.display = 'block';
-    console.log('[INIT] App container displayed');
-    
-    // Check for local data migration
-    const localData = checkForLocalData();
-    const migrationCompleted = isMigrationCompleted();
-    console.log('[INIT] Migration check:', { hasData: localData.hasData, migrationCompleted });
-    
-    if (localData.hasData && !migrationCompleted) {
-      // Show migration modal
-      console.log('[INIT] Showing migration modal');
-      showMigrationModal(localData);
-    } else {
-      // Load data from cloud
-      console.log('[INIT] Loading cloud data...');
-      await loadCloudData();
-    }
-    
-    // Setup migration event listeners
-    migrateBtnConfirm.addEventListener('click', handleMigrationConfirm);
-    migrateBtnSkip.addEventListener('click', handleMigrationSkip);
-    
-    console.log('[INIT] Initialization complete');
-  } catch (error) {
-    console.error('[INIT] Error initializing app:', error);
-    alert(`Failed to initialize app: ${error.message}\n\nPlease check:\n1. Your .env file has correct Supabase credentials\n2. Anonymous authentication is enabled in Supabase Dashboard`);
-  }
+  });
 }
 
 // Handle user logged in

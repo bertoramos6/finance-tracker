@@ -14,7 +14,31 @@
 
 <body>
 
-    <div class="app-container" id="app-container">
+    <!-- Password Gate -->
+    <div class="password-gate" id="password-gate">
+        <div class="password-card">
+            <h1 class="password-title">🔒 Protected Page</h1>
+            <p class="password-subtitle">Enter password to access Finance Tracker</p>
+
+            <form id="password-form" class="password-form">
+                <div class="form-group">
+                    <input type="password" id="gate-password" placeholder="Enter password" required autofocus>
+                </div>
+
+                <div class="password-error" id="password-error"></div>
+
+                <button type="submit" class="btn-primary">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                    Unlock
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="app-container" id="app-container" style="display: none;">
         <!-- Navigation -->
         <nav class="nav-tabs">
             <button class="nav-tab active" data-tab="entry">

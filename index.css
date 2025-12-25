@@ -1076,25 +1076,72 @@ textarea::placeholder {
     }
 
     .card {
-        padding: var(--spacing-lg);
+        padding: var(--spacing-md);
     }
 
     .page-title {
-        font-size: 1.5rem;
+        font-size: 1.25rem;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+
+    /* Fix navigation overflow */
+    .nav-tabs {
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        /* Firefox */
+        -ms-overflow-style: none;
+        /* IE/Edge */
+    }
+
+    .nav-tabs::-webkit-scrollbar {
+        display: none;
+        /* Chrome/Safari */
     }
 
     .nav-tab {
         font-size: 0.75rem;
         padding: var(--spacing-xs) var(--spacing-sm);
+        white-space: nowrap;
+        flex-shrink: 0;
     }
 
-    .nav-tab span {
-        display: none;
+    .nav-tab svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    /* Fix date inputs overflow */
+    .form-group input[type="date"],
+    .form-group input[type="month"] {
+        font-size: 14px;
+        min-width: 0;
+        width: 100%;
     }
 
     .date-filter {
         flex-direction: column;
         align-items: stretch;
+    }
+
+    .quick-filters {
+        flex-wrap: wrap;
+    }
+
+    .btn-quick-filter {
+        font-size: 0.75rem;
+        padding: var(--spacing-xs) var(--spacing-sm);
+    }
+
+    .year-selector {
+        font-size: 0.75rem;
+        min-width: 100px;
+    }
+
+    .custom-filter-group {
+        flex-direction: column;
     }
 
     .filter-group {
@@ -1114,17 +1161,59 @@ textarea::placeholder {
         grid-template-columns: 1fr;
     }
 
+    /* Fix table overflow */
+    .table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
     .breakdown-table {
-        font-size: 0.75rem;
+        font-size: 0.7rem;
+        min-width: 600px;
+        /* Allow horizontal scroll */
     }
 
     .breakdown-table th,
     .breakdown-table td {
-        padding: var(--spacing-xs) var(--spacing-sm);
+        padding: var(--spacing-xs);
+        white-space: nowrap;
+    }
+
+    .breakdown-table th:first-child,
+    .breakdown-table td:first-child {
+        position: sticky;
+        left: 0;
+        background: var(--color-bg-tertiary);
+        z-index: 2;
+    }
+
+    /* Transaction list mobile optimization */
+    .transaction-item {
+        flex-wrap: wrap;
+    }
+
+    .transaction-details {
+        min-width: 0;
+        flex: 1 1 100%;
+    }
+
+    .transaction-amount {
+        font-size: 1rem;
     }
 
     .projections-grid {
         grid-template-columns: 1fr;
+    }
+
+    /* Card header mobile */
+    .card-header {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+        align-items: stretch;
+    }
+
+    .card-header .btn-primary {
+        width: 100%;
     }
 }
 
@@ -1132,7 +1221,86 @@ textarea::placeholder {
 /* Authentication Styles */
 /* ============================================ */
 
-/* Auth Container */
+/* Password Gate */
+.password-gate {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-md);
+    background: var(--color-bg-primary);
+}
+
+.password-card {
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-2xl);
+    max-width: 400px;
+    width: 100%;
+    box-shadow: var(--shadow-xl);
+    border: 1px solid var(--color-border);
+}
+
+.password-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: var(--spacing-xs);
+    color: var(--color-text-primary);
+}
+
+.password-subtitle {
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+    text-align: center;
+    margin-bottom: var(--spacing-xl);
+}
+
+.password-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.password-form input[type="password"] {
+    width: 100%;
+    padding: var(--spacing-md);
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text-primary);
+    font-size: 1rem;
+    font-family: inherit;
+    transition: all var(--transition-base);
+    text-align: center;
+    letter-spacing: 0.1em;
+}
+
+.password-form input[type="password"]:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+.password-error {
+    color: var(--color-expense);
+    font-size: 0.875rem;
+    text-align: center;
+    padding: var(--spacing-sm);
+    background: rgba(239, 68, 68, 0.1);
+    border-radius: var(--radius-md);
+    display: none;
+}
+
+.password-error.show {
+    display: block;
+}
+
+.password-form .btn-primary {
+    width: 100%;
+}
+
+/* Auth Container (legacy) */
 .auth-container {
     min-height: 100vh;
     display: flex;
