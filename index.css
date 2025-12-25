@@ -52,22 +52,52 @@
     --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Reset & Base Styles */
+/* Global Styles */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
-body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: linear-gradient(135deg, #0a0e1a 0%, #1e2740 100%);
-    color: var(--color-text-primary);
-    min-height: 100vh;
-    line-height: 1.6;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+html {
+    overflow-x: hidden;
+    width: 100%;
 }
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    line-height: 1.6;
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
+    min-height: 100vh;
+    /* Kept from original body */
+    -webkit-font-smoothing: antialiased;
+    /* Kept from original body */
+    -moz-osx-font-smoothing: grayscale;
+    /* Kept from original body */
+}
+
+/* Prevent horizontal scroll */
+.app-container,
+.password-gate {
+    max-width: 100vw;
+    overflow-x: hidden;
+}
+
+/* Fix input overflow */
+input,
+select,
+textarea {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* Reset & Base Styles */
+/* The original `*` rule is now part of "Global Styles" */
+/* The original `body` rule is now part of "Global Styles" */
 
 /* App Container */
 .app-container {
