@@ -927,6 +927,18 @@ textarea::placeholder {
     height: 500px;
 }
 
+/* Mobile: reduce pie chart height and make legend scrollable */
+@media (max-width: 640px) {
+    #pie-chart-section {
+        max-width: 100%;
+    }
+
+    #pie-chart-section .chart-container {
+        height: 400px;
+        max-height: 70vh;
+    }
+}
+
 .section-title {
     font-size: 1.125rem;
     font-weight: 600;

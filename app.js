@@ -951,11 +951,15 @@ function renderCategoryChart(filteredTransactions) {
           position: 'bottom',
           labels: {
             color: '#e2e8f0',
-            padding: 10,
+            padding: window.innerWidth < 640 ? 4 : 6,
             font: {
-              size: 12
-            }
-          }
+              size: window.innerWidth < 640 ? 9 : 10
+            },
+            boxWidth: window.innerWidth < 640 ? 10 : 12,
+            usePointStyle: true
+          },
+          maxHeight: window.innerWidth < 640 ? 150 : undefined,
+          display: true
         },
         tooltip: {
           callbacks: {
