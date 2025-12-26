@@ -1165,25 +1165,7 @@ function renderSpendingTrendsChart(filteredTransactions) {
       },
       plugins: {
         legend: {
-          display: true,
-          position: 'bottom',
-          labels: {
-            color: '#9ca3af',
-            padding: 15,
-            usePointStyle: true,
-            font: {
-              size: 12
-            }
-          },
-          onClick: function(e, legendItem, legend) {
-            const index = legendItem.datasetIndex;
-            const ci = legend.chart;
-            const meta = ci.getDatasetMeta(index);
-
-            // Toggle visibility
-            meta.hidden = meta.hidden === null ? !ci.data.datasets[index].hidden : null;
-            ci.update();
-          }
+          display: false // Disable built-in legend, use custom HTML legend
         },
         tooltip: {
           backgroundColor: 'rgba(0, 0, 0, 0.8)',
@@ -1223,6 +1205,36 @@ function renderSpendingTrendsChart(filteredTransactions) {
       }
     }
   });
+
+  // Generate custom HTML legend
+  const legendContainer = document.getElementById('spending-trends-legend');
+  if (legendContainer) {
+    legendContainer.innerHTML = datasets.map((dataset, index) => {
+      const hidden = dataset.hidden ? 'hidden' : '';
+      return `
+        <div class="legend-item ${hidden}" data-index="${index}">
+          <span class="legend-color" style="background-color: ${dataset.borderColor}"></span>
+          <span>${dataset.label}</span>
+        </div>
+      `;
+    }).join('');
+
+    // Add click handlers to legend items
+    legendContainer.querySelectorAll('.legend-item').forEach(item => {
+      item.addEventListener('click', function() {
+        const index = parseInt(this.dataset.index);
+        const meta = spendingTrendsChart.getDatasetMeta(index);
+        
+        // Toggle visibility
+        meta.hidden = meta.hidden === null ? !spendingTrendsChart.data.datasets[index].hidden : null;
+        
+        // Toggle visual state
+        this.classList.toggle('hidden');
+        
+        spendingTrendsChart.update();
+      });
+    });
+  }
 }
 
 function renderBreakdownTable(filteredTransactions) {
