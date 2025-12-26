@@ -161,17 +161,30 @@
                     <!-- Cards will be populated by JavaScript -->
                 </div>
 
-                <!-- Charts Section -->
-                <div class="charts-section">
+                <!-- Category Distribution Chart -->
+                <div class="chart-section" id="pie-chart-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Expense Distribution</h2>
+                    </div>
                     <div class="chart-container">
-                        <h2 class="section-title">Spending by Category</h2>
                         <canvas id="category-chart"></canvas>
                     </div>
+                </div>
+
+                <!-- Monthly Spending Trends Chart -->
+                <div class="chart-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Monthly Spending Trends</h2>
+                    </div>
                     <div class="chart-container">
-                        <h2 class="section-title">Monthly Trends</h2>
-                        <canvas id="trend-chart"></canvas>
+                        <canvas id="spending-trends-chart"></canvas>
                     </div>
                 </div>
+                <div class="chart-container">
+                    <h2 class="section-title">Monthly Trends</h2>
+                    <canvas id="trend-chart"></canvas>
+                </div>
+
 
                 <!-- Expense Breakdown Table -->
                 <div class="breakdown-section">

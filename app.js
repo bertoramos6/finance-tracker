@@ -634,12 +634,26 @@ async function importFromCSV(file) {
 
 // Date Filter Functions
 function applyDateFilter() {
-  const startDate = document.getElementById('start-date').value;
-  const endDate = document.getElementById('end-date').value;
+  const startInput = document.getElementById('filter-start-date').value;
+  const endInput = document.getElementById('filter-end-date').value;
 
-  dateFilter.start = startDate || null;
-  dateFilter.end = endDate || null;
+  if (startInput) {
+    // Convert YYYY-MM to YYYY-MM-01
+    dateFilter.start = startInput + '-01';
+  }
+  if (endInput) {
+    // Convert YYYY-MM to last day of month
+    const [year, month] = endInput.split('-');
+    const lastDay = new Date(year, month, 0).getDate();
+    dateFilter.end = `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
+  }
 
+  // Clear quick filter active states
+  document.querySelectorAll('.btn-quick-filter').forEach(btn => {
+    btn.classList.remove('active');
+  });
+
+  // Update all components
   renderOverviewTab();
 }
 
@@ -831,6 +845,7 @@ function renderOverviewTab() {
   renderSummaryCards(filteredTransactions);
   renderCategoryChart(filteredTransactions);
   renderTrendChart(filteredTransactions);
+  renderSpendingTrendsChart(filteredTransactions);
   renderBreakdownTable(filteredTransactions);
 }
 
@@ -1059,6 +1074,153 @@ function renderTrendChart(filteredTransactions) {
   });
 }
 
+// Render Monthly Spending Trends Chart (Line chart with toggleable categories)
+let spendingTrendsChart = null;
+
+function renderSpendingTrendsChart(filteredTransactions) {
+  const canvas = document.getElementById('spending-trends-chart');
+  if (!canvas) return;
+
+  // Filter only expenses
+  const expenses = filteredTransactions.filter(t => t.type === 'expense');
+
+  // Group by month and category
+  const monthlyData = {};
+  const categories = new Set();
+
+  expenses.forEach(t => {
+    const date = new Date(t.date);
+    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    const categoryName = t.category?.name || 'Unknown';
+
+    categories.add(categoryName);
+
+    if (!monthlyData[monthKey]) {
+      monthlyData[monthKey] = {};
+    }
+    if (!monthlyData[monthKey][categoryName]) {
+      monthlyData[monthKey][categoryName] = 0;
+    }
+
+    monthlyData[monthKey][categoryName] += parseFloat(t.amount);
+  });
+
+  // Sort months chronologically
+  const sortedMonths = Object.keys(monthlyData).sort();
+  const sortedCategories = Array.from(categories).sort();
+
+  // Generate colors for each category
+  const colors = [
+    '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',
+    '#ec4899', '#14b8a6', '#f97316', '#6366f1', '#84cc16',
+    '#06b6d4', '#f43f5e', '#22c55e', '#eab308', '#a855f7'
+  ];
+
+  // Create datasets for each category
+  const datasets = sortedCategories.map((category, index) => {
+    const data = sortedMonths.map(month => monthlyData[month][category] || 0);
+    
+    return {
+      label: category,
+      data: data,
+      borderColor: colors[index % colors.length],
+      backgroundColor: colors[index % colors.length] + '20',
+      borderWidth: 2,
+      tension: 0.4,
+      fill: false,
+      pointRadius: 4,
+      pointHoverRadius: 6,
+      hidden: true // All categories hidden by default - click legend to show
+    };
+  });
+
+  // Format month labels
+  const labels = sortedMonths.map(month => {
+    const [year, monthNum] = month.split('-');
+    return new Date(year, parseInt(monthNum) - 1).toLocaleString('default', { month: 'short', year: 'numeric' });
+  });
+
+  // Destroy existing chart
+  if (spendingTrendsChart) {
+    spendingTrendsChart.destroy();
+  }
+
+  // Create new chart
+  spendingTrendsChart = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: datasets
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: 'index',
+        intersect: false
+      },
+      plugins: {
+        legend: {
+          display: true,
+          position: 'bottom',
+          labels: {
+            color: '#9ca3af',
+            padding: 15,
+            usePointStyle: true,
+            font: {
+              size: 12
+            }
+          },
+          onClick: function(e, legendItem, legend) {
+            const index = legendItem.datasetIndex;
+            const ci = legend.chart;
+            const meta = ci.getDatasetMeta(index);
+
+            // Toggle visibility
+            meta.hidden = meta.hidden === null ? !ci.data.datasets[index].hidden : null;
+            ci.update();
+          }
+        },
+        tooltip: {
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          padding: 12,
+          titleColor: '#fff',
+          bodyColor: '#fff',
+          borderColor: '#374151',
+          borderWidth: 1,
+          callbacks: {
+            label: function(context) {
+              return `${context.dataset.label}: €${context.parsed.y.toFixed(2)}`;
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            color: '#9ca3af',
+            callback: function(value) {
+              return '€' + value.toFixed(0);
+            }
+          },
+          grid: {
+            color: 'rgba(255, 255, 255, 0.1)'
+          }
+        },
+        x: {
+          ticks: {
+            color: '#9ca3af'
+          },
+          grid: {
+            color: 'rgba(255, 255, 255, 0.1)'
+          }
+        }
+      }
+    }
+  });
+}
+
 function renderBreakdownTable(filteredTransactions) {
   const table = document.getElementById('breakdown-table');
 
@@ -1118,17 +1280,17 @@ function renderBreakdownTable(filteredTransactions) {
     
     sortedMonths.forEach(month => {
       const amount = monthlyData[category]?.[month] || 0;
+      total += amount; // Always add to total (including 0)
+      
       if (amount > 0) {
         html += `<td>€${amount.toFixed(2)}</td>`;
-        total += amount;
-        count++;
       } else {
         html += '<td class="empty-cell">-</td>';
       }
     });
     
-    // Calculate average
-    const average = count > 0 ? total / count : 0;
+    // Calculate average - divide by total months (including empty ones)
+    const average = sortedMonths.length > 0 ? total / sortedMonths.length : 0;
     html += `<td class="average-col">€${average.toFixed(2)}</td>`;
     html += '</tr>';
   });

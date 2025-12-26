@@ -101,9 +101,11 @@ textarea {
 
 /* App Container */
 .app-container {
-    max-width: 600px;
+    width: 100%;
+    max-width: 1400px;
+    /* Reasonable limit to prevent too-wide layout */
     margin: 0 auto;
-    padding: var(--spacing-md);
+    padding: var(--spacing-lg);
     min-height: 100vh;
 }
 
@@ -866,10 +868,33 @@ textarea::placeholder {
 
 /* Charts Section */
 .charts-section {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: var(--spacing-xl);
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--spacing-xl) * 1.5);
+    /* Increased spacing between widgets */
     margin-bottom: var(--spacing-xl);
+}
+
+/* Desktop: horizontal layout with flexbox */
+@media (min-width: 1024px) {
+    .charts-section {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .chart-section {
+        flex: 1;
+        min-width: 400px;
+    }
+}
+
+.chart-section {
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+    /* Explicit spacing between widgets */
 }
 
 .chart-container {
@@ -877,6 +902,29 @@ textarea::placeholder {
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     padding: var(--spacing-lg);
+    height: 400px;
+    position: relative;
+}
+
+/* Pie chart section should be narrower */
+#pie-chart-section {
+    max-width: 600px;
+    flex-shrink: 0;
+    margin: 0 auto var(--spacing-xl) auto;
+}
+
+/* Desktop: pie chart stays narrow while other charts expand */
+@media (min-width: 1024px) {
+    #pie-chart-section {
+        flex: 0 0 auto;
+        width: 550px;
+        margin: 0 auto var(--spacing-xl) auto;
+    }
+}
+
+/* Pie chart container maintains aspect ratio */
+#pie-chart-section .chart-container {
+    height: 500px;
 }
 
 .section-title {
@@ -887,26 +935,30 @@ textarea::placeholder {
 }
 
 .chart-container canvas {
-    max-height: 300px;
+    max-height: 100%;
+    width: 100% !important;
+    height: 100% !important;
 }
 
 /* Breakdown Section */
 .breakdown-section {
+    margin-top: var(--spacing-xl);
     margin-bottom: var(--spacing-xl);
 }
 
+/* Table Wrapper */
 .table-wrapper {
     overflow-x: auto;
-    background: var(--color-bg-tertiary);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    margin-top: var(--spacing-md);
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    margin: var(--spacing-md) 0;
 }
 
 .breakdown-table {
     width: 100%;
+    min-width: 600px;
     border-collapse: collapse;
-    font-size: 0.875rem;
+    font-size: 0.9rem;
 }
 
 .breakdown-table th,
@@ -917,12 +969,12 @@ textarea::placeholder {
 }
 
 .breakdown-table th {
-    background: var(--color-bg-primary);
+    background: var(--color-bg-tertiary);
     color: var(--color-text-secondary);
     font-weight: 600;
     text-transform: uppercase;
     font-size: 0.75rem;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.5px;
     position: sticky;
     top: 0;
     z-index: 10;
@@ -931,15 +983,11 @@ textarea::placeholder {
 .breakdown-table th:first-child,
 .breakdown-table td:first-child {
     text-align: left;
-    position: sticky;
-    left: 0;
-    background: var(--color-bg-tertiary);
-    z-index: 5;
+    font-weight: 500;
 }
 
 .breakdown-table th:first-child {
-    z-index: 15;
-    background: var(--color-bg-primary);
+    min-width: 150px;
 }
 
 .breakdown-table tbody tr:hover {
