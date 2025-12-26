@@ -238,6 +238,25 @@ function setupEventListeners() {
 
   // Export CSV
   exportCsvBtn.addEventListener('click', exportToCSV);
+  
+  // Import CSV
+  const importCsvBtn = document.getElementById('import-csv');
+  const csvFileInput = document.getElementById('csv-file-input');
+  
+  if (importCsvBtn && csvFileInput) {
+    importCsvBtn.addEventListener('click', () => {
+      csvFileInput.click();
+    });
+    
+    csvFileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        importFromCSV(file);
+        // Reset input so same file can be selected again
+        e.target.value = '';
+      }
+    });
+  }
 
   // Tab navigation
   document.querySelectorAll('.nav-tab').forEach(btn => {
@@ -395,7 +414,7 @@ function renderTransactions() {
           <span class="category-name">${categoryName}</span>
         </div>
         <div class="transaction-amount ${isIncome ? 'income' : 'expense'}">
-          ${isIncome ? '+' : '-'}$${transaction.amount.toFixed(2)}
+          ${isIncome ? '+' : '-'}€${transaction.amount.toFixed(2)}
         </div>
       </div>
       <div class="transaction-details">
@@ -445,6 +464,168 @@ function exportToCSV() {
   a.download = `finance-tracker-${new Date().toISOString().split('T')[0]}.csv`;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+// Import CSV
+async function importFromCSV(file) {
+  try {
+    let text = await file.text();
+    
+    // Remove BOM if present
+    if (text.charCodeAt(0) === 0xFEFF) {
+      text = text.slice(1);
+    }
+    
+    const lines = text.split(/\r?\n/).filter(line => line.trim());
+    
+    if (lines.length < 2) {
+      alert('CSV file is empty or invalid');
+      return;
+    }
+
+    // Auto-detect delimiter (comma or semicolon)
+    const firstLine = lines[0];
+    const commaCount = (firstLine.match(/,/g) || []).length;
+    const semicolonCount = (firstLine.match(/;/g) || []).length;
+    const delimiter = semicolonCount > commaCount ? ';' : ',';
+    
+    console.log('[IMPORT] Detected delimiter:', delimiter === ';' ? 'semicolon' : 'comma');
+
+    // Parse CSV line properly (handles quoted fields)
+    function parseCSVLine(line) {
+      const result = [];
+      let current = '';
+      let inQuotes = false;
+      
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        
+        if (char === '"') {
+          if (inQuotes && line[i + 1] === '"') {
+            current += '"';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (char === delimiter && !inQuotes) {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      result.push(current.trim());
+      return result;
+    }
+
+    // Parse header
+    const headerValues = parseCSVLine(lines[0]);
+    const header = headerValues.map(h => h.toLowerCase().trim());
+    
+    console.log('[IMPORT] CSV Header:', header);
+    
+    const dateIndex = header.findIndex(h => h === 'date' || h === 'fecha');
+    const typeIndex = header.findIndex(h => h === 'type' || h === 'tipo');
+    const categoryIndex = header.findIndex(h => h === 'category' || h === 'categoria' || h === 'categoría');
+    const amountIndex = header.findIndex(h => h === 'amount' || h === 'cantidad' || h === 'importe');
+    const commentIndex = header.findIndex(h => h === 'comment' || h === 'comentario' || h === 'description' || h === 'descripcion' || h === 'descripción');
+
+    console.log('[IMPORT] Column indices:', { dateIndex, typeIndex, categoryIndex, amountIndex, commentIndex });
+
+    if (dateIndex === -1 || typeIndex === -1 || categoryIndex === -1 || amountIndex === -1) {
+      alert(`CSV must have columns: Date, Type, Category, Amount\n\nOptional: Comment\n\nFound columns: ${headerValues.join(', ')}`);
+      return;
+    }
+
+    // Parse rows
+    const importedTransactions = [];
+    const errors = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i];
+      if (!line.trim()) continue;
+
+      const values = parseCSVLine(line);
+
+      const date = values[dateIndex]?.trim();
+      const type = values[typeIndex]?.toLowerCase().trim();
+      const categoryName = values[categoryIndex]?.trim();
+      const amountStr = values[amountIndex]?.trim().replace(/[€$,]/g, ''); // Remove currency symbols and commas
+      const amount = parseFloat(amountStr);
+      const comment = commentIndex !== -1 ? values[commentIndex]?.trim() : '';
+
+      // Validate
+      if (!date || !type || !categoryName || isNaN(amount)) {
+        errors.push(`Row ${i + 1}: Missing or invalid data (date=${date}, type=${type}, category=${categoryName}, amount=${amountStr})`);
+        continue;
+      }
+
+      if (type !== 'expense' && type !== 'income' && type !== 'gasto' && type !== 'ingreso') {
+        errors.push(`Row ${i + 1}: Type must be 'expense' or 'income' (found: '${type}')`);
+        continue;
+      }
+
+      // Normalize type
+      const normalizedType = (type === 'gasto' || type === 'expense') ? 'expense' : 'income';
+
+      // Find matching category
+      const category = cloudCategories.find(
+        c => c.name.toLowerCase() === categoryName.toLowerCase() && c.type === normalizedType
+      );
+
+      if (!category) {
+        errors.push(`Row ${i + 1}: Category '${categoryName}' not found for type '${normalizedType}'`);
+        continue;
+      }
+
+      importedTransactions.push({
+        date,
+        type: normalizedType,
+        category_id: category.id,
+        amount,
+        comment: comment || null
+      });
+    }
+
+    // Show summary
+    if (errors.length > 0) {
+      const proceed = confirm(
+        `Found ${errors.length} error(s):\n\n${errors.slice(0, 5).join('\n')}${errors.length > 5 ? '\n...' : ''}\n\n` +
+        `Successfully parsed ${importedTransactions.length} transactions.\n\nContinue with import?`
+      );
+      if (!proceed) return;
+    } else if (importedTransactions.length === 0) {
+      alert('No valid transactions found in CSV');
+      return;
+    } else {
+      const proceed = confirm(`Import ${importedTransactions.length} transactions?`);
+      if (!proceed) return;
+    }
+
+    // Import transactions
+    console.log('[IMPORT] Importing', importedTransactions.length, 'transactions...');
+    
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const transaction of importedTransactions) {
+      const result = await createTransaction(transaction);
+      if (result.error) {
+        failCount++;
+        console.error('[IMPORT] Failed to import transaction:', result.error);
+      } else {
+        successCount++;
+      }
+    }
+
+    // Reload data
+    await loadCloudData();
+
+    alert(`Import complete!\n\nSuccessful: ${successCount}\nFailed: ${failCount}`);
+  } catch (error) {
+    console.error('[IMPORT] Error importing CSV:', error);
+    alert(`Error importing CSV: ${error.message}`);
+  }
 }
 
 // ============================================
@@ -689,21 +870,21 @@ function renderSummaryCards(filteredTransactions) {
       <div class="stat-icon">💰</div>
       <div class="stat-content">
         <div class="stat-label">Total Income</div>
-        <div class="stat-value">$${stats.income.toFixed(2)}</div>
+        <div class="stat-value">€${stats.income.toFixed(2)}</div>
       </div>
     </div>
     <div class="stat-card expense">
       <div class="stat-icon">💸</div>
       <div class="stat-content">
         <div class="stat-label">Total Expenses</div>
-        <div class="stat-value">$${stats.expenses.toFixed(2)}</div>
+        <div class="stat-value">€${stats.expenses.toFixed(2)}</div>
       </div>
     </div>
     <div class="stat-card balance ${stats.balance >= 0 ? 'positive' : 'negative'}">
       <div class="stat-icon">${stats.balance >= 0 ? '📈' : '📉'}</div>
       <div class="stat-content">
         <div class="stat-label">Balance</div>
-        <div class="stat-value">$${stats.balance.toFixed(2)}</div>
+        <div class="stat-value">€${stats.balance.toFixed(2)}</div>
       </div>
     </div>
   `;
@@ -847,7 +1028,7 @@ function renderTrendChart(filteredTransactions) {
         tooltip: {
           callbacks: {
             label: function(context) {
-              return `${context.dataset.label}: $${context.parsed.y.toFixed(2)}`;
+              return `${context.dataset.label}: €${context.parsed.y.toFixed(2)}`;
             }
           }
         }
@@ -886,12 +1067,15 @@ function renderBreakdownTable(filteredTransactions) {
     return;
   }
 
-  // Group transactions by month and category
+  // Group transactions by month and category (expenses only)
   const monthlyData = {};
   const allMonths = new Set();
   const allCategories = new Set();
 
   filteredTransactions.forEach(t => {
+    // Only process expenses
+    if (t.type !== 'expense') return;
+    
     const date = new Date(t.date);
     const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
     const categoryName = t.category?.name || 'Unknown';
@@ -906,10 +1090,7 @@ function renderBreakdownTable(filteredTransactions) {
       monthlyData[categoryName][monthKey] = 0;
     }
     
-    // Only count expenses for the breakdown
-    if (t.type === 'expense') {
-      monthlyData[categoryName][monthKey] += parseFloat(t.amount);
-    }
+    monthlyData[categoryName][monthKey] += parseFloat(t.amount);
   });
 
   // Sort months chronologically
@@ -993,34 +1174,6 @@ function generateColors(count) {
 // EDIT & DELETE TRANSACTION FUNCTIONS
 // ============================================
 
-// Edit Modal Functions
-window.openEditModal = function(transactionId) {
-  const transaction = transactions.find(t => t.id === transactionId);
-  if (!transaction) return;
-
-  currentEditingId = transactionId;
-
-  // Populate form
-  document.getElementById('edit-type').value = transaction.type;
-  document.getElementById('edit-amount').value = transaction.amount;
-  document.getElementById('edit-date').value = transaction.date;
-  document.getElementById('edit-comment').value = transaction.comment || '';
-
-  // Populate categories for the transaction type
-  populateEditCategories(transaction.type);
-  
-  // Set selected category
-  document.getElementById('edit-category').value = transaction.category_id;
-
-  // Show modal
-  document.getElementById('edit-modal').style.display = 'flex';
-};
-
-function closeEditModal() {
-  document.getElementById('edit-modal').style.display = 'none';
-  currentEditingId = null;
-}
-
 function populateEditCategories(type) {
   const categories = getCategories(type);
   const select = document.getElementById('edit-category');
@@ -1082,6 +1235,32 @@ async function handleEditSubmit(e) {
   }
 }
 
+// Handle delete confirmation
+async function handleDeleteConfirm() {
+  if (!currentEditingId) return;
+
+  try {
+    const { error } = await deleteTransaction(currentEditingId);
+
+    if (error) {
+      alert(`Error deleting transaction: ${error}`);
+      return;
+    }
+
+    // Remove from local state
+    transactions = transactions.filter(t => t.id != currentEditingId);
+
+    // Close modal and refresh
+    document.getElementById('delete-modal').classList.remove('active');
+    currentEditingId = null;
+    renderTransactions();
+    renderOverviewTab();
+  } catch (error) {
+    console.error('Error deleting transaction:', error);
+    alert('An unexpected error occurred');
+  }
+}
+
 // Delete Modal Functions
 window.openDeleteModal = function(transactionId) {
   const transaction = transactions.find(t => t.id === transactionId);
@@ -1093,7 +1272,7 @@ window.openDeleteModal = function(transactionId) {
   const message = `
     <div class="delete-transaction-info">
       <p><strong>Type:</strong> ${transaction.type === 'income' ? 'Income' : 'Expense'}</p>
-      <p><strong>Amount:</strong> $${transaction.amount.toFixed(2)}</p>
+      <p><strong>Amount:</strong> €${transaction.amount.toFixed(2)}</p>
       <p><strong>Category:</strong> ${categoryName}</p>
       <p><strong>Date:</strong> ${new Date(transaction.date).toLocaleDateString()}</p>
       ${transaction.comment ? `<p><strong>Comment:</strong> ${transaction.comment}</p>` : ''}
@@ -1389,12 +1568,143 @@ function setupCategoryEventListeners() {
   }
 }
 
+// ============================================
+// EDIT AND DELETE TRANSACTION MODALS
+// ============================================
+
+// Open edit modal
+function openEditModal(transactionId) {
+  const transaction = transactions.find(t => t.id == transactionId);
+  if (!transaction) {
+    alert('Transaction not found');
+    return;
+  }
+
+  currentEditingId = transactionId;
+
+  // Set type using toggle buttons
+  const expenseBtn = document.getElementById('edit-type-expense');
+  const incomeBtn = document.getElementById('edit-type-income');
+  
+  if (transaction.type === 'expense') {
+    expenseBtn.classList.add('active');
+    incomeBtn.classList.remove('active');
+  } else {
+    incomeBtn.classList.add('active');
+    expenseBtn.classList.remove('active');
+  }
+
+  // Populate form
+  document.getElementById('edit-amount').value = transaction.amount;
+  document.getElementById('edit-date').value = transaction.date;
+  document.getElementById('edit-comment').value = transaction.comment || '';
+
+  // Populate categories for the type
+  populateEditCategories(transaction.type);
+  document.getElementById('edit-category').value = transaction.category_id;
+
+  // Show modal
+  document.getElementById('edit-modal').classList.add('active');
+}
+
+// Open delete modal
+function openDeleteModal(transactionId) {
+  const transaction = transactions.find(t => t.id == transactionId);
+  if (!transaction) {
+    alert('Transaction not found');
+    return;
+  }
+
+  currentEditingId = transactionId;
+
+  // Update modal content
+  const categoryName = transaction.category?.name || 'Unknown';
+  document.getElementById('delete-transaction-details').innerHTML = `
+    <p><strong>Category:</strong> ${categoryName}</p>
+    <p><strong>Amount:</strong> €${transaction.amount.toFixed(2)}</p>
+    <p><strong>Date:</strong> ${new Date(transaction.date).toLocaleDateString()}</p>
+    ${transaction.comment ? `<p><strong>Comment:</strong> ${transaction.comment}</p>` : ''}
+  `;
+
+  // Show modal
+  document.getElementById('delete-modal').classList.add('active');
+}
+
+// Setup edit/delete modal event listeners
+function setupEditDeleteListeners() {
+  // Edit modal
+  const editForm = document.getElementById('edit-transaction-form');
+  const editModalClose = document.getElementById('edit-modal-close');
+  const editModalOverlay = document.getElementById('edit-modal-overlay');
+  const editTypeSelect = document.getElementById('edit-type');
+
+  if (editForm) {
+    editForm.addEventListener('submit', handleEditSubmit);
+  }
+
+  if (editModalClose) {
+    editModalClose.addEventListener('click', () => {
+      document.getElementById('edit-modal').classList.remove('active');
+      currentEditingId = null;
+    });
+  }
+
+  if (editModalOverlay) {
+    editModalOverlay.addEventListener('click', () => {
+      document.getElementById('edit-modal').classList.remove('active');
+      currentEditingId = null;
+    });
+  }
+
+  if (editTypeSelect) {
+    editTypeSelect.addEventListener('change', (e) => {
+      populateEditCategories(e.target.value);
+    });
+  }
+
+  // Delete modal
+  const deleteConfirm = document.getElementById('delete-confirm');
+  const deleteCancel = document.getElementById('delete-cancel');
+  const deleteModalClose = document.getElementById('delete-modal-close');
+  const deleteModalOverlay = document.getElementById('delete-modal-overlay');
+
+  if (deleteConfirm) {
+    deleteConfirm.addEventListener('click', handleDeleteConfirm);
+  }
+
+  if (deleteCancel) {
+    deleteCancel.addEventListener('click', () => {
+      document.getElementById('delete-modal').classList.remove('active');
+      currentEditingId = null;
+    });
+  }
+
+  if (deleteModalClose) {
+    deleteModalClose.addEventListener('click', () => {
+      document.getElementById('delete-modal').classList.remove('active');
+      currentEditingId = null;
+    });
+  }
+
+  if (deleteModalOverlay) {
+    deleteModalOverlay.addEventListener('click', () => {
+      document.getElementById('delete-modal').classList.remove('active');
+      currentEditingId = null;
+    });
+  }
+}
+
+// Expose functions to window for onclick handlers
+window.openEditModal = openEditModal;
+window.openDeleteModal = openDeleteModal;
+
 // Initialize app when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
   // Setup all event listeners first (must be done before init)
   setupEventListeners();
   setupModalEventListeners();
   setupCategoryEventListeners();
+  setupEditDeleteListeners();
   
   // Then initialize auth and load data
   init();

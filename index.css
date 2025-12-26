@@ -1199,8 +1199,8 @@ textarea::placeholder {
 
     .breakdown-table {
         font-size: 0.7rem;
-        min-width: 600px;
-        /* Allow horizontal scroll */
+        min-width: 500px;
+        /* Reduced width for better mobile fit */
     }
 
     .breakdown-table th,
@@ -1209,12 +1209,11 @@ textarea::placeholder {
         white-space: nowrap;
     }
 
+    /* Remove sticky on mobile - allow full horizontal scroll */
     .breakdown-table th:first-child,
     .breakdown-table td:first-child {
-        position: sticky;
-        left: 0;
         background: var(--color-bg-tertiary);
-        z-index: 2;
+        /* No position: sticky on mobile */
     }
 
     /* Transaction list mobile optimization */
