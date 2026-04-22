@@ -16,7 +16,6 @@ export interface BatchTemplate {
   entries: BatchEntry[];
 }
 
-function uid() { return Math.random().toString(36).slice(2); }
 
 export function useBatches(userId: string) {
   const [batches, setBatches] = useState<BatchTemplate[]>([]);

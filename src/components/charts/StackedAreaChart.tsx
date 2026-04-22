@@ -58,8 +58,8 @@ export default function StackedAreaChart({ series, labels, tooltipLabels, height
   const sy = (v: number) => H - (v / maxV) * H;
 
   const bandPath = (bottom: number[], top: number[]) => {
-    const tPts: [number, number][] = top.map((v, i) => [sx(i), sy(v)]);
-    const bPts: [number, number][] = bottom.map((v, i) => [sx(i), sy(v)]).reverse();
+    const tPts: [number, number][] = top.map((v, i) => [sx(i), sy(v)] as [number, number]);
+    const bPts: [number, number][] = bottom.map((v, i) => [sx(i), sy(v)] as [number, number]).reverse();
     let d = smoothD(tPts);
     d += ` L${bPts[0][0]} ${bPts[0][1]}`;
     for (let i = 1; i < bPts.length; i++) {

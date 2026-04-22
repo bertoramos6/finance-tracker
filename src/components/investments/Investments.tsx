@@ -4,7 +4,7 @@ import type { Investment } from '../../types';
 import type { InvRange } from '../../types';
 import { INV_PALETTE } from '../../constants/colors';
 import { DEFAULT_INVESTMENT_TYPES } from '../../constants/investmentTypes';
-import { monthKey, monthKeyLocal, monthLabel, fmtEur } from '../../utils';
+import { monthKeyLocal, monthLabel, fmtEur } from '../../utils';
 import StackedAreaChart from '../charts/StackedAreaChart';
 import Sparkline from '../charts/Sparkline';
 

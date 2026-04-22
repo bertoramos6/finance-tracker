@@ -1,0 +1,78 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg: #0c0c0c;
+  --sidebar: #111111;
+  --surface: #141414;
+  --card: #1a1a1a;
+  --surface-alt: rgba(255, 255, 255, 0.025);
+  --border: #262626;
+  --text: #f0f0ee;
+  --text2: #686868;
+  --input-bg: #111111;
+  --hover: rgba(255, 255, 255, 0.05);
+  --accent: #f0f0ee;
+  --accent-text: #0c0c0c;
+  --green: #4ade80;
+  --red: #f87171;
+  --blue: #60a5fa;
+  --teal: #2dd4bf;
+}
+
+html.light {
+  --bg: #eeecea;
+  --sidebar: #e4e2de;
+  --surface: #f5f4f0;
+  --card: #ffffff;
+  --surface-alt: rgba(0, 0, 0, 0.02);
+  --border: #d8d6d2;
+  --text: #111110;
+  --text2: #777370;
+  --input-bg: #f0efeb;
+  --hover: rgba(0, 0, 0, 0.04);
+  --accent: #111110;
+  --accent-text: #ffffff;
+  --green: #16a34a;
+  --red: #dc2626;
+  --blue: #2563eb;
+  --teal: #0d9488;
+}
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+input, select, textarea, button {
+  font-family: 'Nunito', sans-serif;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.5);
+  opacity: 0.6;
+  cursor: pointer;
+}
+
+select option {
+  background: var(--card);
+  color: var(--text);
+}
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text2); }
+* { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--text2) !important;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.04);
+  outline: none;
+}
