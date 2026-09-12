@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useWindowSize } from '../../hooks/useWindowSize';
 import type { Investment } from '../../types';
 import type { InvRange } from '../../types';
@@ -96,6 +96,8 @@ export default function Investments({ invs, onUpdateEntry, onAddInv, onRemoveInv
   const today    = new Date();
   const curMonth = monthKeyLocal(today);
   const [range,    setRange]    = useState<InvRange>('all');
+  const [tableRange, setTableRange] = useState<InvRange>('all');
+  const tableScrollRef = useRef<HTMLDivElement>(null);
   const [editCell, setEditCell] = useState<{ id: string; month: string } | null>(null);
   const [editVal,  setEditVal]  = useState('');
   const [showAdd,  setShowAdd]  = useState(false);
@@ -153,6 +155,28 @@ export default function Investments({ invs, onUpdateEntry, onAddInv, onRemoveInv
   });
 
   const recentMonths = chartMonths;
+
+  const tableMonths = (() => {
+    const endDate = new Date(today.getFullYear(), today.getMonth(), 1);
+    let startDate: Date;
+    if (tableRange === '1m')       startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    else if (tableRange === '3m')  startDate = new Date(today.getFullYear(), today.getMonth() - 3, 1);
+    else if (tableRange === '6m')  startDate = new Date(today.getFullYear(), today.getMonth() - 6, 1);
+    else if (tableRange === 'ytd') startDate = new Date(today.getFullYear(), 0, 1);
+    else if (tableRange === '1y')  startDate = new Date(today.getFullYear() - 1, today.getMonth(), 1);
+    else { const [y, m] = earliest.split('-').map(Number); startDate = new Date(y, m - 1, 1); }
+    const result: string[] = [];
+    let cur = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+    const end = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+    while (cur <= end) { result.push(monthKeyLocal(cur)); cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 1); }
+    return result;
+  })();
+
+  useEffect(() => {
+    if (tableScrollRef.current) {
+      tableScrollRef.current.scrollLeft = tableScrollRef.current.scrollWidth;
+    }
+  }, [tableMonths]);
 
   const commitEdit = async () => {
     if (editCell && editVal !== '') {
@@ -298,16 +322,26 @@ export default function Investments({ invs, onUpdateEntry, onAddInv, onRemoveInv
 
       {/* Monthly values table */}
       <div style={card}>
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 14 }}>
-          <div style={cardTitle}>Monthly Values</div>
-          <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text2)' }}>Click a cell to update this month's value</span>
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
+          <div style={{ ...cardTitle, marginBottom: 0 }}>Monthly Values</div>
+          <div style={{ display: 'flex', gap: 4, marginLeft: 'auto', flexWrap: 'wrap' }}>
+            {RANGES.map(r => (
+              <button key={r.key} onClick={() => setTableRange(r.key)} style={{
+                padding: '4px 11px', border: '1px solid var(--border)', borderRadius: 20, cursor: 'pointer',
+                fontFamily: 'Nunito,sans-serif', fontSize: 11, fontWeight: 700, transition: 'all 0.12s',
+                background: tableRange === r.key ? 'var(--accent)' : 'transparent',
+                color: tableRange === r.key ? 'var(--accent-text)' : 'var(--text2)',
+              }}>{r.label}</button>
+            ))}
+          </div>
         </div>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+        <div style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 10 }}>Click a cell to update this month's value</div>
+        <div ref={tableScrollRef} style={{ overflowX: 'auto' }}>
+          <table style={{ borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr>
-                <th style={{ ...thBase, textAlign: 'left', paddingLeft: 0 }}>Asset</th>
-                {recentMonths.map(mk => <th key={mk} style={{ ...thBase, textAlign: 'right' }}>{monthLabel(mk)}</th>)}
+                <th style={{ ...thBase, textAlign: 'left', paddingLeft: 8, position: 'sticky', left: 0, zIndex: 2, background: 'var(--card)' }}>Asset</th>
+                {tableMonths.map(mk => <th key={mk} style={{ ...thBase, textAlign: 'right' }}>{monthLabel(mk)}</th>)}
                 <th style={{ ...thBase, textAlign: 'right' }}>Change</th>
                 <th style={{ ...thBase, textAlign: 'right' }}>Alloc%</th>
               </tr>
@@ -315,20 +349,20 @@ export default function Investments({ invs, onUpdateEntry, onAddInv, onRemoveInv
             <tbody>
               {invs.map((inv, idx) => {
                 const color  = INV_PALETTE[idx % INV_PALETTE.length];
-                const vals   = recentMonths.map(mk => getVal(inv, mk));
+                const vals   = tableMonths.map(mk => getVal(inv, mk));
                 const curVal = vals[vals.length - 1] || 0;
                 const pval   = vals[vals.length - 2] || 0;
                 const chg    = curVal - pval;
                 const alloc  = curNW > 0 ? (curVal / curNW * 100).toFixed(1) + '%' : '—';
                 return (
                   <tr key={inv.id} style={{ borderTop: '1px solid var(--border)' }}>
-                    <td style={{ padding: '9px 0', fontWeight: 700, color: 'var(--text)' }}>
+                    <td style={{ padding: '9px 8px', fontWeight: 700, color: 'var(--text)', position: 'sticky', left: 0, zIndex: 1, background: 'var(--card)', whiteSpace: 'nowrap' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <div style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
                         {inv.name}
                       </div>
                     </td>
-                    {recentMonths.map((mk, mi) => {
+                    {tableMonths.map((mk, mi) => {
                       const isEdit = editCell && editCell.id === inv.id && editCell.month === mk;
                       return (
                         <td key={mk} style={{ padding: '9px 8px', textAlign: 'right' }}
@@ -359,11 +393,11 @@ export default function Investments({ invs, onUpdateEntry, onAddInv, onRemoveInv
                 );
               })}
               {(() => {
-                const tots = recentMonths.map(mk => invs.reduce((s, inv) => s + getVal(inv, mk), 0));
+                const tots = tableMonths.map(mk => invs.reduce((s, inv) => s + getVal(inv, mk), 0));
                 const tc = tots[tots.length - 1] - tots[tots.length - 2];
                 return (
                   <tr style={{ borderTop: '2px solid var(--border)', fontWeight: 800 }}>
-                    <td style={{ padding: '10px 0', color: 'var(--text)' }}>Total</td>
+                    <td style={{ padding: '10px 8px', color: 'var(--text)', position: 'sticky', left: 0, background: 'var(--card)' }}>Total</td>
                     {tots.map((v, i) => <td key={i} style={{ padding: '10px 8px', textAlign: 'right', color: 'var(--text)' }}>{fmtEur(v)}</td>)}
                     <td style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 800, color: tc >= 0 ? 'var(--green)' : 'var(--red)' }}>
                       {(tc >= 0 ? '+' : '-') + fmtEur(Math.abs(tc))}
