@@ -15,6 +15,16 @@ export function monthKeyLocal(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
+export function monthsFrom(start: Date, endKey: string): string[] {
+  const result: string[] = [];
+  const d = new Date(start.getFullYear(), start.getMonth(), 1);
+  while (monthKeyLocal(d) <= endKey) {
+    result.push(monthKeyLocal(d));
+    d.setMonth(d.getMonth() + 1);
+  }
+  return result;
+}
+
 export function monthLabel(key: string): string {
   const [y, m] = key.split('-');
   return new Date(+y, +m - 1, 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
