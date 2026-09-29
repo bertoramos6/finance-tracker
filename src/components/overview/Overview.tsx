@@ -39,6 +39,17 @@ const CHART_PILLS: Record<ChartRange, string> = {
   '6m': '6M', ytd: 'YTD', '1y': '1Y', all: 'All',
 };
 
+// All options are stacked in one grid cell so the heading is always as wide as the longest one
+function RangeHeading({ label, options, isMobile }: { label: string; options: string[]; isMobile: boolean }) {
+  return (
+    <h2 style={{ display: 'grid', fontSize: isMobile ? 18 : 22, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.02em', marginRight: 4, whiteSpace: 'nowrap' }}>
+      {options.map(o => (
+        <span key={o} aria-hidden={o !== label} style={{ gridArea: '1 / 1', visibility: o === label ? 'visible' : 'hidden' }}>{o}</span>
+      ))}
+    </h2>
+  );
+}
+
 function getStatTxns(txns: Transaction[], range: StatRange, today: Date, curMonthKey: string): Transaction[] {
   const y = today.getFullYear();
   if (range === 'month') return txns.filter(t => monthKey(t.date) === curMonthKey);
@@ -112,9 +123,7 @@ export default function Overview({ txns }: Props) {
     <div style={{ padding: isMobile ? '16px 14px' : '22px 24px', overflowY: 'auto', overflowX: 'hidden', height: '100%', boxSizing: 'border-box' }}>
       {/* Stat range */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
-        <h2 style={{ fontSize: isMobile ? 18 : 22, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.02em', marginRight: 4 }}>
-          {STAT_LABELS[statRange]}
-        </h2>
+        <RangeHeading label={STAT_LABELS[statRange]} options={Object.values(STAT_LABELS)} isMobile={isMobile} />
         {(['month', 'ytd', '1y', 'all'] as StatRange[]).map(r => (
           <button key={r} onClick={() => setStatRange(r)} style={pill(statRange === r)}>
             {isMobile ? (r === 'month' ? 'Mo' : r.toUpperCase()) : STAT_LABELS[r]}
@@ -134,29 +143,26 @@ export default function Overview({ txns }: Props) {
         </div>
       </div>
 
-      {/* Comparison banner — This month only */}
-      {statRange === 'month' && prevSoFar > 0 && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
-          background: compDiff >= 0 ? 'rgba(74,222,128,0.07)' : 'rgba(248,113,113,0.07)',
-          border: `1px solid ${compDiff >= 0 ? 'rgba(74,222,128,0.22)' : 'rgba(248,113,113,0.22)'}`,
-          borderRadius: 10, padding: '10px 14px', marginBottom: 12,
-        }}>
-          <span style={{ fontSize: 14 }}>{compDiff >= 0 ? '📉' : '📈'}</span>
-          <span style={{ fontSize: 12, color: 'var(--text2)' }}>Day {day} vs {monthLabel(prevMonthKey)}:</span>
-          <span style={{ fontSize: 12, color: 'var(--text)', fontWeight: 600 }}>€{curSoFar.toFixed(2)} spent</span>
-          {!isMobile && <span style={{ fontSize: 12, color: 'var(--text2)' }}>vs €{prevSoFar.toFixed(2)} then</span>}
-          <span style={{ marginLeft: 'auto', fontSize: 13, fontWeight: 800, color: compDiff >= 0 ? 'var(--green)' : 'var(--red)', whiteSpace: 'nowrap' }}>
-            {compDiff >= 0 ? `€${compDiff.toFixed(2)} less ✓` : `€${Math.abs(compDiff).toFixed(2)} more`}
-          </span>
-        </div>
-      )}
+      {/* Comparison banner — only shown for This month, but always takes its space so the page doesn't jump */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap', overflow: 'hidden',
+        visibility: statRange === 'month' && prevSoFar > 0 ? 'visible' : 'hidden',
+        background: compDiff >= 0 ? 'rgba(74,222,128,0.07)' : 'rgba(248,113,113,0.07)',
+        border: `1px solid ${compDiff >= 0 ? 'rgba(74,222,128,0.22)' : 'rgba(248,113,113,0.22)'}`,
+        borderRadius: 10, padding: '10px 14px', marginBottom: 12,
+      }}>
+        <span style={{ fontSize: 14 }}>{compDiff >= 0 ? '📉' : '📈'}</span>
+        <span style={{ fontSize: 12, color: 'var(--text2)', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>Day {day} vs {monthLabel(prevMonthKey)}:</span>
+        <span style={{ fontSize: 12, color: 'var(--text)', fontWeight: 600 }}>€{curSoFar.toFixed(2)} spent</span>
+        {!isMobile && <span style={{ fontSize: 12, color: 'var(--text2)' }}>vs €{prevSoFar.toFixed(2)} then</span>}
+        <span style={{ marginLeft: 'auto', fontSize: 13, fontWeight: 800, color: compDiff >= 0 ? 'var(--green)' : 'var(--red)' }}>
+          {compDiff >= 0 ? `€${compDiff.toFixed(2)} less ✓` : `€${Math.abs(compDiff).toFixed(2)} more`}
+        </span>
+      </div>
 
       {/* Chart range */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '26px 0 14px', flexWrap: 'wrap' }}>
-        <h2 style={{ fontSize: isMobile ? 18 : 22, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.02em', marginRight: 4 }}>
-          {CHART_LABELS[chartRange]}
-        </h2>
+        <RangeHeading label={CHART_LABELS[chartRange]} options={Object.values(CHART_LABELS)} isMobile={isMobile} />
         {(['6m', 'ytd', '1y', 'all'] as ChartRange[]).map(r => (
           <button key={r} onClick={() => setChartRange(r)} style={pill(chartRange === r)}>
             {CHART_PILLS[r]}
