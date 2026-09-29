@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { Investment } from '../types';
+import { errorMessage } from '../utils';
 import {
   fetchInvestments,
   insertInvestment,
@@ -10,13 +11,18 @@ import {
 export function useInvestments(userId: string) {
   const [invs, setInvs] = useState<Investment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     if (!userId) return;
+    setError(null);
     fetchInvestments(userId)
       .then(setInvs)
+      .catch(e => setError(errorMessage(e)))
       .finally(() => setLoading(false));
   }, [userId]);
+
+  useEffect(load, [load]);
 
   const addInv = async (inv: { name: string; type: string }) => {
     const created = await insertInvestment(inv, userId);
@@ -42,5 +48,5 @@ export function useInvestments(userId: string) {
     );
   };
 
-  return { invs, loading, addInv, removeInv, updateEntry };
+  return { invs, loading, error, reload: load, addInv, removeInv, updateEntry };
 }

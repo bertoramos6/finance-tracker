@@ -116,6 +116,21 @@ create policy "Users own their batch entries"
   using (batch_id in (
     select id from batch_templates where user_id = auth.uid()
   ));
+
+-- Custom expense categories and investment types
+create table custom_types (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users not null default auth.uid(),
+  kind text not null check (kind in ('expense', 'investment')),
+  name text not null,
+  color text,
+  created_at timestamptz default now(),
+  unique (user_id, kind, name)
+);
+
+alter table custom_types enable row level security;
+create policy "Users own their custom types"
+  on custom_types for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 ```
 
 ### 4. Configure environment variables

@@ -24,7 +24,3 @@ export const CATEGORIES: Category[] = [
   { name: 'Suministros',               color: '#d6d3d1' },
   { name: 'Impuestos/multas',          color: '#f87171' },
 ];
-
-export const CAT_MAP: Record<string, string> = Object.fromEntries(
-  CATEGORIES.map(c => [c.name, c.color])
-);

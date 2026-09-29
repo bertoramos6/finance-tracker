@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import type { Transaction } from '../../types';
-import { CAT_MAP } from '../../constants/categories';
+import { useCategories } from '../../hooks/useCategories';
 import { monthKey, monthLabel, fmtDate, fmtEur } from '../../utils';
 
 interface Props {
@@ -21,16 +21,25 @@ const thBase: React.CSSProperties = {
   fontSize: 11, letterSpacing: '0.07em', textTransform: 'uppercase',
   borderBottom: '2px solid var(--border)',
 };
+const sticky: React.CSSProperties = {
+  position: 'sticky', left: 0, zIndex: 1, background: 'var(--card)',
+};
 
 export default function CategoryTable({ txns, tableMonths, allCats }: Props) {
   const [tip, setTip] = useState<Tip | null>(null);
+  const { catMap } = useCategories();
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;
+  }, [tableMonths.length, allCats.length]);
 
   return (
-    <div style={{ overflowX: 'auto', position: 'relative' }}>
+    <div ref={scrollRef} style={{ overflowX: 'auto', position: 'relative' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
         <thead>
           <tr>
-            <th style={{ ...thBase, textAlign: 'left', paddingLeft: 0 }}>Category</th>
+            <th style={{ ...thBase, ...sticky, zIndex: 2, textAlign: 'left', paddingLeft: 0 }}>Category</th>
             {tableMonths.map(mk => <th key={mk} style={{ ...thBase, textAlign: 'right' }}>{monthLabel(mk)}</th>)}
             <th style={{ ...thBase, textAlign: 'right' }}>Avg</th>
           </tr>
@@ -45,9 +54,9 @@ export default function CategoryTable({ txns, tableMonths, allCats }: Props) {
             const avg = nz.length ? nz.reduce((a, b) => a + b, 0) / nz.length : 0;
             return (
               <tr key={cat} style={{ borderTop: '1px solid var(--border)' }}>
-                <td style={{ padding: '8px 12px 8px 0', fontWeight: 600, color: 'var(--text)' }}>
+                <td style={{ ...sticky, padding: '8px 12px 8px 0', fontWeight: 600, color: 'var(--text)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: CAT_MAP[cat] || '#888', flexShrink: 0 }} />
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: catMap[cat] || '#888', flexShrink: 0 }} />
                     {cat}
                   </div>
                 </td>
@@ -73,7 +82,7 @@ export default function CategoryTable({ txns, tableMonths, allCats }: Props) {
             const avgT = tots.filter(v => v > 0).reduce((a, b) => a + b, 0) / (tots.filter(v => v > 0).length || 1);
             return (
               <tr style={{ borderTop: '2px solid var(--border)', fontWeight: 700 }}>
-                <td style={{ padding: '10px 12px 10px 0', color: 'var(--text)' }}>Total expenses</td>
+                <td style={{ ...sticky, padding: '10px 12px 10px 0', color: 'var(--text)' }}>Total expenses</td>
                 {tots.map((v, i) => <td key={i} style={{ padding: '10px 8px', textAlign: 'right', color: 'var(--text)' }}>{fmtEur(v)}</td>)}
                 <td style={{ padding: '10px 0 10px 8px', textAlign: 'right', color: 'var(--text2)', fontStyle: 'italic' }}>{fmtEur(avgT)}</td>
               </tr>
@@ -96,17 +105,17 @@ export default function CategoryTable({ txns, tableMonths, allCats }: Props) {
             return (
               <>
                 <tr style={{ borderTop: '1px solid var(--border)' }}>
-                  <td style={{ padding: '8px 12px 8px 0', fontWeight: 600, color: 'var(--text)' }}>Income</td>
+                  <td style={{ ...sticky, padding: '8px 12px 8px 0', fontWeight: 600, color: 'var(--text)' }}>Income</td>
                   {inc.map((v, i) => <td key={i} style={{ ...cell, color: v > 0 ? 'var(--text)' : 'var(--text2)' }}>{v > 0 ? fmtEur(v) : '—'}</td>)}
                   <td style={{ ...avgCell, color: 'var(--text2)' }}>{avgInc > 0 ? fmtEur(avgInc) : '—'}</td>
                 </tr>
                 <tr style={{ borderTop: '1px solid var(--border)', fontWeight: 700 }}>
-                  <td style={{ padding: '8px 12px 8px 0', color: 'var(--text)' }}>Net saved</td>
+                  <td style={{ ...sticky, padding: '8px 12px 8px 0', color: 'var(--text)' }}>Net saved</td>
                   {net.map((v, i) => <td key={i} style={{ ...cell, color: inc[i] || exp[i] ? netColor(v) : 'var(--text2)' }}>{inc[i] || exp[i] ? signed(v) : '—'}</td>)}
                   <td style={{ ...avgCell, color: netColor(avgNet) }}>{active.length ? signed(avgNet) : '—'}</td>
                 </tr>
                 <tr style={{ borderTop: '1px solid var(--border)' }}>
-                  <td style={{ padding: '8px 12px 8px 0', fontWeight: 600, color: 'var(--text)' }}>Savings rate</td>
+                  <td style={{ ...sticky, padding: '8px 12px 8px 0', fontWeight: 600, color: 'var(--text)' }}>Savings rate</td>
                   {net.map((v, i) => <td key={i} style={{ ...cell, color: inc[i] > 0 ? netColor(v) : 'var(--text2)' }}>{inc[i] > 0 ? `${Math.round(v / inc[i] * 100)}%` : '—'}</td>)}
                   <td style={{ ...avgCell, color: totalRate === null ? 'var(--text2)' : netColor(totalRate) }}>{totalRate === null ? '—' : `${Math.round(totalRate)}%`}</td>
                 </tr>

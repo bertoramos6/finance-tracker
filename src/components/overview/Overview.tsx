@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useWindowSize } from '../../hooks/useWindowSize';
 import type { Transaction } from '../../types';
-import { CAT_MAP } from '../../constants/categories';
+import { useCategories } from '../../hooks/useCategories';
 import { monthKey, monthKeyLocal, monthLabel, monthsFrom, getMonthStats } from '../../utils';
 import AreaChart from '../charts/AreaChart';
 import StackedBarChart from '../charts/StackedBarChart';
@@ -66,6 +66,7 @@ export default function Overview({ txns }: Props) {
   const prevMonthKey = monthKeyLocal(new Date(today.getFullYear(), today.getMonth() - 1, 1));
 
   const { isMobile } = useWindowSize();
+  const { catMap } = useCategories();
   const [statRange,  setStatRange]  = useState<StatRange>('month');
   const [chartRange, setChartRange] = useState<ChartRange>('1y');
   const chartMonths = getChartMonths(chartRange, today, curMonthKey, txns);
@@ -98,7 +99,7 @@ export default function Overview({ txns }: Props) {
   const barSeries = allCats
     .map(cat => ({
       label: cat,
-      color: CAT_MAP[cat] || '#888',
+      color: catMap[cat] || '#888',
       data: tableMonths.map(mk => txns.filter(t => t.type === 'expense' && t.category === cat && monthKey(t.date) === mk).reduce((s, t) => s + t.amount, 0)),
     }))
     .sort((a, b) => b.data.reduce((x, y) => x + y, 0) - a.data.reduce((x, y) => x + y, 0));

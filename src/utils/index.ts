@@ -1,3 +1,9 @@
+// Supabase errors are plain objects with a message, not Error instances
+export function errorMessage(e: unknown): string {
+  if (e && typeof e === 'object' && 'message' in e && typeof e.message === 'string') return e.message;
+  return String(e);
+}
+
 export function fmtEur(n: number): string {
   return '€' + Math.abs(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }

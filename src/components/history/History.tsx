@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useWindowSize } from '../../hooks/useWindowSize';
 import type { Transaction } from '../../types';
-import { CATEGORIES } from '../../constants/categories';
+import { useCategories } from '../../hooks/useCategories';
 import { monthKey, monthLabel, fmtEur } from '../../utils';
 import { exportCSV } from '../../services/csv';
 import TransactionRow from './TransactionRow';
@@ -20,6 +20,7 @@ const inp = (extra: React.CSSProperties = {}): React.CSSProperties => ({
 
 export default function History({ txns, onEdit, onDelete }: Props) {
   const { isMobile } = useWindowSize();
+  const { expenseCats } = useCategories();
   const [search,    setSearch]    = useState('');
   const [filterCat, setFilterCat] = useState('');
 
@@ -48,7 +49,7 @@ export default function History({ txns, onEdit, onDelete }: Props) {
         />
         <select value={filterCat} onChange={e => setFilterCat(e.target.value)} style={inp({ width: isMobile ? '100%' : 190 })}>
           <option value="">All categories</option>
-          {CATEGORIES.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+          {expenseCats.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
         </select>
         {!isMobile && (
           <button

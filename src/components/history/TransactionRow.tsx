@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useWindowSize } from '../../hooks/useWindowSize';
 import type { Transaction } from '../../types';
-import { CAT_MAP, CATEGORIES } from '../../constants/categories';
+import { useCategories } from '../../hooks/useCategories';
 import { fmtDate, fmtEur } from '../../utils';
 
 interface Props {
@@ -23,6 +23,7 @@ const ghostBtn = (extra: React.CSSProperties = {}): React.CSSProperties => ({
 
 export default function TransactionRow({ txn, onEdit, onDelete }: Props) {
   const { isMobile } = useWindowSize();
+  const { expenseCats, catMap } = useCategories();
   const [hov,     setHov]     = useState(false);
   const [editing, setEditing] = useState(false);
   const [ed,      setEd]      = useState({ ...txn });
@@ -33,7 +34,7 @@ export default function TransactionRow({ txn, onEdit, onDelete }: Props) {
         <input type="number" value={ed.amount} onChange={e => setEd(d => ({ ...d, amount: +e.target.value }))} style={inp({ width: 110 })} />
         <input type="date" value={ed.date} onChange={e => setEd(d => ({ ...d, date: e.target.value }))} style={inp({ flex: 1 })} />
         <select value={ed.category} onChange={e => setEd(d => ({ ...d, category: e.target.value }))} style={inp({ flex: 1 })}>
-          {CATEGORIES.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+          {expenseCats.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
         </select>
       </div>
       <div style={{ display: 'flex', gap: 10, width: '100%' }}>
@@ -50,7 +51,7 @@ export default function TransactionRow({ txn, onEdit, onDelete }: Props) {
       onClick={() => isMobile && setHov(h => !h)}
       style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', border: '1px solid var(--border)', borderRadius: 9, background: hov ? 'var(--hover)' : 'var(--card)', transition: 'background 0.12s' }}
     >
-      <div style={{ width: 3, alignSelf: 'stretch', borderRadius: 3, background: txn.type === 'income' ? 'var(--green)' : (CAT_MAP[txn.category] || '#555'), flexShrink: 0 }} />
+      <div style={{ width: 3, alignSelf: 'stretch', borderRadius: 3, background: txn.type === 'income' ? 'var(--green)' : (catMap[txn.category] || '#555'), flexShrink: 0 }} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <span style={{ fontWeight: 700, color: 'var(--text)', fontSize: 14 }}>{txn.category}</span>

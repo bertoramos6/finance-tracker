@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { Transaction } from '../../types';
-import { CATEGORIES } from '../../constants/categories';
+import { useCategories } from '../../hooks/useCategories';
 import { useBatches, type BatchEntry } from '../../hooks/useBatches';
 
 interface Props {
@@ -44,7 +44,8 @@ export default function BatchAdd({ userId, onAddBatch }: Props) {
   const [newBatchName, setNewBatchName] = useState('');
   // New entry form
   const [addingTo,    setAddingTo]   = useState<string | null>(null);
-  const [newCat,      setNewCat]     = useState(CATEGORIES[0].name);
+  const { expenseCats } = useCategories();
+  const [newCat,      setNewCat]     = useState(expenseCats[0].name);
   const [newAmount,   setNewAmount]  = useState('');
   const [newDesc,     setNewDesc]    = useState('');
   // Rename
@@ -82,7 +83,7 @@ export default function BatchAdd({ userId, onAddBatch }: Props) {
   const commitNewEntry = () => {
     if (!addingTo || !newAmount || isNaN(+newAmount)) return;
     addEntry(addingTo, { category: newCat, amount: +newAmount, description: newDesc });
-    setNewAmount(''); setNewDesc(''); setNewCat(CATEGORIES[0].name); setAddingTo(null);
+    setNewAmount(''); setNewDesc(''); setNewCat(expenseCats[0].name); setAddingTo(null);
   };
 
   if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text2)', fontSize: 13 }}>Loading…</div>;
@@ -254,7 +255,7 @@ export default function BatchAdd({ userId, onAddBatch }: Props) {
                 <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     <select value={newCat} onChange={e => setNewCat(e.target.value)} style={inp({ flex: 1, minWidth: 160 })}>
-                      {CATEGORIES.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+                      {expenseCats.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
                     </select>
                     <input type="number" step="0.01" placeholder="Amount" value={newAmount}
                       onChange={e => setNewAmount(e.target.value)}
