@@ -4,7 +4,7 @@ import type { Investment } from '../../types';
 import type { InvRange } from '../../types';
 import { INV_PALETTE } from '../../constants/colors';
 import { DEFAULT_INVESTMENT_TYPES } from '../../constants/investmentTypes';
-import { monthKeyLocal, monthLabel, fmtEur } from '../../utils';
+import { monthKeyLocal, monthLabel, monthsFrom, fmtEur } from '../../utils';
 import StackedAreaChart from '../charts/StackedAreaChart';
 import Sparkline from '../charts/Sparkline';
 
@@ -109,30 +109,18 @@ export default function Investments({ invs, onUpdateEntry, onAddInv, onRemoveInv
   const PORTFOLIO_START = '2024-09';
   const earliest = (allEntryMonths[0] && allEntryMonths[0] < PORTFOLIO_START) ? allEntryMonths[0] : PORTFOLIO_START;
 
-  const buildMonths = (): string[] => {
-    const endDate = new Date(today.getFullYear(), today.getMonth(), 1);
-    let startDate: Date;
-    if (range === '1m')       startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-    else if (range === '3m')  startDate = new Date(today.getFullYear(), today.getMonth() - 3, 1);
-    else if (range === '6m')  startDate = new Date(today.getFullYear(), today.getMonth() - 6, 1);
-    else if (range === 'ytd') startDate = new Date(today.getFullYear(), 0, 1);
-    else if (range === '1y')  startDate = new Date(today.getFullYear() - 1, today.getMonth(), 1);
-    else {
-      const [y, m] = earliest.split('-').map(Number);
-      startDate = new Date(y, m - 1, 1);
-    }
-
-    const result: string[] = [];
-    let cur = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
-    const end = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
-    while (cur <= end) {
-      result.push(monthKeyLocal(cur));
-      cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
-    }
-    return result;
+  const buildMonths = (r: InvRange): string[] => {
+    const y = today.getFullYear(), mo = today.getMonth();
+    if (r === '1m')  return monthsFrom(new Date(y, mo - 1, 1), curMonth);
+    if (r === '3m')  return monthsFrom(new Date(y, mo - 3, 1), curMonth);
+    if (r === '6m')  return monthsFrom(new Date(y, mo - 6, 1), curMonth);
+    if (r === 'ytd') return monthsFrom(new Date(y, 0, 1), curMonth);
+    if (r === '1y')  return monthsFrom(new Date(y - 1, mo, 1), curMonth);
+    const [ey, em] = earliest.split('-').map(Number);
+    return monthsFrom(new Date(ey, em - 1, 1), curMonth);
   };
 
-  const chartMonths = buildMonths();
+  const chartMonths = buildMonths(range);
   const netByMonth  = chartMonths.map(mk => invs.reduce((s, inv) => s + getVal(inv, mk), 0));
   const curNW       = netByMonth[netByMonth.length - 1] || 0;
   const prevNW      = netByMonth[netByMonth.length - 2] || 0;
@@ -140,7 +128,7 @@ export default function Investments({ invs, onUpdateEntry, onAddInv, onRemoveInv
   const rangeStart  = netByMonth[0] || 0;
   const rangeDiff   = curNW - rangeStart;
 
-  const allMonths7 = Array.from({ length: 7 }, (_, i) => monthKeyLocal(new Date(today.getFullYear(), today.getMonth() - 6 + i, 1)));
+  const allMonths7 = monthsFrom(new Date(today.getFullYear(), today.getMonth() - 6, 1), curMonth);
   const netAll7    = allMonths7.map(mk => invs.reduce((s, inv) => s + getVal(inv, mk), 0));
 
   const stackSeries = invs.map((inv, idx) => ({
@@ -156,27 +144,13 @@ export default function Investments({ invs, onUpdateEntry, onAddInv, onRemoveInv
 
   const recentMonths = chartMonths;
 
-  const tableMonths = (() => {
-    const endDate = new Date(today.getFullYear(), today.getMonth(), 1);
-    let startDate: Date;
-    if (tableRange === '1m')       startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-    else if (tableRange === '3m')  startDate = new Date(today.getFullYear(), today.getMonth() - 3, 1);
-    else if (tableRange === '6m')  startDate = new Date(today.getFullYear(), today.getMonth() - 6, 1);
-    else if (tableRange === 'ytd') startDate = new Date(today.getFullYear(), 0, 1);
-    else if (tableRange === '1y')  startDate = new Date(today.getFullYear() - 1, today.getMonth(), 1);
-    else { const [y, m] = earliest.split('-').map(Number); startDate = new Date(y, m - 1, 1); }
-    const result: string[] = [];
-    let cur = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
-    const end = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
-    while (cur <= end) { result.push(monthKeyLocal(cur)); cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 1); }
-    return result;
-  })();
+  const tableMonths = buildMonths(tableRange);
 
   useEffect(() => {
     if (tableScrollRef.current) {
       tableScrollRef.current.scrollLeft = tableScrollRef.current.scrollWidth;
     }
-  }, [tableMonths]);
+  }, [tableMonths.length]);
 
   const commitEdit = async () => {
     if (editCell && editVal !== '') {

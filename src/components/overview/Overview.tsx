@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useWindowSize } from '../../hooks/useWindowSize';
 import type { Transaction } from '../../types';
 import { CAT_MAP } from '../../constants/categories';
-import { monthKey, monthKeyLocal, monthLabel, getMonthStats } from '../../utils';
+import { monthKey, monthKeyLocal, monthLabel, monthsFrom, getMonthStats } from '../../utils';
 import AreaChart from '../charts/AreaChart';
 import StackedBarChart from '../charts/StackedBarChart';
 import StatCard from './StatCard';
@@ -13,8 +13,6 @@ interface Props {
 }
 
 type StatRange  = 'month' | 'ytd' | '1y' | 'all';
-type TrendRange = '6m' | 'ytd' | '1y' | 'all';
-type CatRange   = '1m' | '3m' | '6m' | 'ytd' | '1y' | 'all';
 
 const card: React.CSSProperties = {
   background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: 18,
@@ -29,27 +27,10 @@ const pill = (active: boolean): React.CSSProperties => ({
   background: active ? 'var(--accent)' : 'transparent',
   color: active ? 'var(--accent-text)' : 'var(--text2)',
 });
-const rangeBtn = (active: boolean): React.CSSProperties => ({
-  padding: '4px 10px', border: '1px solid var(--border)', borderRadius: 6, cursor: 'pointer',
-  fontFamily: 'Nunito,sans-serif', fontSize: 12, fontWeight: 700, transition: 'all 0.12s',
-  background: active ? 'var(--accent)' : 'transparent',
-  color: active ? 'var(--accent-text)' : 'var(--text2)',
-});
 
 const STAT_LABELS: Record<StatRange, string> = {
   month: 'This month', ytd: 'YTD', '1y': '1 Year', all: 'All time',
 };
-
-// Build a list of consecutive months (local-safe) from startDate up to and including curMonth
-function buildMonthList(startDate: Date, curMonthKey: string): string[] {
-  const result: string[] = [];
-  const d = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
-  while (monthKeyLocal(d) <= curMonthKey) {
-    result.push(monthKeyLocal(d));
-    d.setMonth(d.getMonth() + 1);
-  }
-  return result;
-}
 
 function getStatTxns(txns: Transaction[], range: StatRange, today: Date, curMonthKey: string): Transaction[] {
   const y = today.getFullYear();
@@ -62,27 +43,15 @@ function getStatTxns(txns: Transaction[], range: StatRange, today: Date, curMont
   return txns;
 }
 
-function getTableMonths(range: CatRange, today: Date, curMonthKey: string, txns: Transaction[]): string[] {
+// A single month is too little for charts, so 'month' shows the last 6 months there
+function getChartMonths(range: StatRange, today: Date, curMonthKey: string, txns: Transaction[]): string[] {
   const y = today.getFullYear(), mo = today.getMonth();
-  if (range === '1m')  return [curMonthKey];
-  if (range === '3m')  return buildMonthList(new Date(y, mo - 2, 1), curMonthKey);
-  if (range === '6m')  return buildMonthList(new Date(y, mo - 5, 1), curMonthKey);
-  if (range === 'ytd') return buildMonthList(new Date(y, 0, 1), curMonthKey);
-  if (range === '1y')  return buildMonthList(new Date(y - 1, mo + 1, 1), curMonthKey);
-  // all
+  if (range === 'month') return monthsFrom(new Date(y, mo - 5, 1), curMonthKey);
+  if (range === 'ytd')   return monthsFrom(new Date(y, 0, 1), curMonthKey);
+  if (range === '1y')    return monthsFrom(new Date(y - 1, mo + 1, 1), curMonthKey);
   const allMK = [...new Set(txns.map(t => monthKey(t.date)))].sort();
   if (!allMK.length) return [curMonthKey];
-  return buildMonthList(new Date(allMK[0] + 'T12:00:00'), curMonthKey);
-}
-
-function getTrendMonths(range: TrendRange, today: Date, curMonthKey: string, txns: Transaction[]): string[] {
-  const y = today.getFullYear(), mo = today.getMonth();
-  if (range === '6m')  return buildMonthList(new Date(y, mo - 5, 1), curMonthKey);
-  if (range === 'ytd') return buildMonthList(new Date(y, 0, 1), curMonthKey);
-  if (range === '1y')  return buildMonthList(new Date(y - 1, mo, 1), curMonthKey);
-  const allMK = [...new Set(txns.map(t => monthKey(t.date)))].sort();
-  if (!allMK.length) return [curMonthKey];
-  return buildMonthList(new Date(allMK[0] + 'T12:00:00'), curMonthKey);
+  return monthsFrom(new Date(allMK[0] + 'T12:00:00'), curMonthKey);
 }
 
 export default function Overview({ txns }: Props) {
@@ -92,8 +61,7 @@ export default function Overview({ txns }: Props) {
 
   const { isMobile } = useWindowSize();
   const [statRange,  setStatRange]  = useState<StatRange>('month');
-  const [trendRange, setTrendRange] = useState<TrendRange>('6m');
-  const [catRange,   setCatRange]   = useState<CatRange>('3m');
+  const chartMonths = getChartMonths(statRange, today, curMonthKey, txns);
 
   // Stat cards
   const rangeTxns = getStatTxns(txns, statRange, today, curMonthKey);
@@ -108,7 +76,7 @@ export default function Overview({ txns }: Props) {
   const compDiff  = prevSoFar - curSoFar;
 
   // Trend chart
-  const trendMonths = getTrendMonths(trendRange, today, curMonthKey, txns);
+  const trendMonths = chartMonths;
   const trendLabels = trendMonths.map((mk, i) => {
     const step = trendMonths.length <= 7 ? 1 : trendMonths.length <= 13 ? 2 : 3;
     // always label the last point (current month)
@@ -116,7 +84,7 @@ export default function Overview({ txns }: Props) {
   });
 
   // Category table
-  const tableMonths = getTableMonths(catRange, today, curMonthKey, txns);
+  const tableMonths = chartMonths;
   const allCats = [...new Set(txns.filter(t => t.type === 'expense' && tableMonths.includes(monthKey(t.date))).map(t => t.category))].sort();
 
   // Largest categories at the bottom of each stacked bar
@@ -131,10 +99,6 @@ export default function Overview({ txns }: Props) {
     const step = tableMonths.length <= 13 ? 1 : tableMonths.length <= 25 ? 2 : 3;
     return (i % step === 0 || i === tableMonths.length - 1) ? monthLabel(mk).split(' ')[0] : '';
   });
-
-  const CAT_RANGE_LABELS: Record<CatRange, string> = {
-    '1m': '1M', '3m': '3M', '6m': '6M', ytd: 'YTD', '1y': '1Y', all: 'All',
-  };
 
   return (
     <div style={{ padding: isMobile ? '16px 14px' : '22px 24px', overflowY: 'auto', overflowX: 'hidden', height: '100%', boxSizing: 'border-box' }}>
@@ -185,15 +149,8 @@ export default function Overview({ txns }: Props) {
         <div style={{ ...card, minWidth: 0, overflow: 'hidden' }}>
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12, gap: 8, flexWrap: 'wrap' }}>
             <div style={cardTitle}>Monthly Trends</div>
-            <div style={{ display: 'flex', gap: 4, marginLeft: 'auto', flexWrap: 'wrap' }}>
-              {(['6m', 'ytd', '1y', 'all'] as TrendRange[]).map(val => (
-                <button key={val} onClick={() => setTrendRange(val)} style={rangeBtn(trendRange === val)}>
-                  {val === '6m' ? '6M' : val === 'ytd' ? 'YTD' : val === '1y' ? '1Y' : 'All'}
-                </button>
-              ))}
-            </div>
             {!isMobile && (
-              <div style={{ display: 'flex', gap: 12 }}>
+              <div style={{ display: 'flex', gap: 12, marginLeft: 'auto' }}>
                 {([['Income', 'var(--green)'], ['Expenses', 'var(--red)'], ['Balance', 'var(--blue)']] as const).map(([l, c]) => (
                   <span key={l} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text2)' }}>
                     <span style={{ display: 'inline-block', width: 18, height: 2.5, background: c, borderRadius: 2 }} />
@@ -215,18 +172,9 @@ export default function Overview({ txns }: Props) {
         </div>
       </div>
 
-      {/* Category table with its own range */}
+      {/* Category table */}
       <div style={card}>
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
-          <div style={cardTitle}>Category Breakdown</div>
-          <div style={{ display: 'flex', gap: 4, marginLeft: 'auto', flexWrap: 'wrap' }}>
-            {(['1m', '3m', '6m', 'ytd', '1y', 'all'] as CatRange[]).map(r => (
-              <button key={r} onClick={() => setCatRange(r)} style={rangeBtn(catRange === r)}>
-                {CAT_RANGE_LABELS[r]}
-              </button>
-            ))}
-          </div>
-        </div>
+        <div style={cardTitle}>Category Breakdown</div>
         {tableMonths.length > 1 && (
           <div style={{ marginBottom: 18 }}>
             <StackedBarChart series={barSeries} labels={barLabels} tooltipLabels={tableMonths.map(monthLabel)} height={isMobile ? 180 : 220} />
