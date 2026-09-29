@@ -13,6 +13,7 @@ interface Props {
 }
 
 type StatRange  = 'month' | 'ytd' | '1y' | 'all';
+type ChartRange = '6m' | 'ytd' | '1y' | 'all';
 
 const card: React.CSSProperties = {
   background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: 18,
@@ -31,6 +32,12 @@ const pill = (active: boolean): React.CSSProperties => ({
 const STAT_LABELS: Record<StatRange, string> = {
   month: 'This month', ytd: 'YTD', '1y': '1 Year', all: 'All time',
 };
+const CHART_LABELS: Record<ChartRange, string> = {
+  '6m': 'Last 6 months', ytd: 'YTD', '1y': 'Last 12 months', all: 'All time',
+};
+const CHART_PILLS: Record<ChartRange, string> = {
+  '6m': '6M', ytd: 'YTD', '1y': '1Y', all: 'All',
+};
 
 function getStatTxns(txns: Transaction[], range: StatRange, today: Date, curMonthKey: string): Transaction[] {
   const y = today.getFullYear();
@@ -43,10 +50,9 @@ function getStatTxns(txns: Transaction[], range: StatRange, today: Date, curMont
   return txns;
 }
 
-// A single month is too little for charts, so 'month' shows the last 6 months there
-function getChartMonths(range: StatRange, today: Date, curMonthKey: string, txns: Transaction[]): string[] {
+function getChartMonths(range: ChartRange, today: Date, curMonthKey: string, txns: Transaction[]): string[] {
   const y = today.getFullYear(), mo = today.getMonth();
-  if (range === 'month') return monthsFrom(new Date(y, mo - 5, 1), curMonthKey);
+  if (range === '6m')    return monthsFrom(new Date(y, mo - 5, 1), curMonthKey);
   if (range === 'ytd')   return monthsFrom(new Date(y, 0, 1), curMonthKey);
   if (range === '1y')    return monthsFrom(new Date(y - 1, mo + 1, 1), curMonthKey);
   const allMK = [...new Set(txns.map(t => monthKey(t.date)))].sort();
@@ -61,7 +67,8 @@ export default function Overview({ txns }: Props) {
 
   const { isMobile } = useWindowSize();
   const [statRange,  setStatRange]  = useState<StatRange>('month');
-  const chartMonths = getChartMonths(statRange, today, curMonthKey, txns);
+  const [chartRange, setChartRange] = useState<ChartRange>('1y');
+  const chartMonths = getChartMonths(chartRange, today, curMonthKey, txns);
 
   // Stat cards
   const rangeTxns = getStatTxns(txns, statRange, today, curMonthKey);
@@ -143,6 +150,18 @@ export default function Overview({ txns }: Props) {
           </span>
         </div>
       )}
+
+      {/* Chart range */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '26px 0 14px', flexWrap: 'wrap' }}>
+        <h2 style={{ fontSize: isMobile ? 18 : 22, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.02em', marginRight: 4 }}>
+          {CHART_LABELS[chartRange]}
+        </h2>
+        {(['6m', 'ytd', '1y', 'all'] as ChartRange[]).map(r => (
+          <button key={r} onClick={() => setChartRange(r)} style={pill(chartRange === r)}>
+            {CHART_PILLS[r]}
+          </button>
+        ))}
+      </div>
 
       {/* Trends */}
       <div style={{ marginBottom: 12, minWidth: 0 }}>
