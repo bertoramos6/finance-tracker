@@ -3,8 +3,8 @@ import { useWindowSize } from '../../hooks/useWindowSize';
 import type { Transaction } from '../../types';
 import { CAT_MAP } from '../../constants/categories';
 import { monthKey, monthKeyLocal, monthLabel, getMonthStats } from '../../utils';
-import DonutChart from '../charts/DonutChart';
 import AreaChart from '../charts/AreaChart';
+import StackedBarChart from '../charts/StackedBarChart';
 import StatCard from './StatCard';
 import CategoryTable from './CategoryTable';
 
@@ -107,11 +107,6 @@ export default function Overview({ txns }: Props) {
   const prevSoFar = txns.filter(t => monthKey(t.date) === prevMonthKey && t.type === 'expense' && new Date(t.date + 'T12:00:00').getDate() <= day).reduce((s, t) => s + t.amount, 0);
   const compDiff  = prevSoFar - curSoFar;
 
-  // Donut
-  const byCat: Record<string, number> = {};
-  rangeTxns.filter(t => t.type === 'expense').forEach(t => { byCat[t.category] = (byCat[t.category] || 0) + t.amount; });
-  const donutData = Object.entries(byCat).sort((a, b) => b[1] - a[1]).slice(0, 9).map(([label, value]) => ({ label, value, color: CAT_MAP[label] || '#888' }));
-
   // Trend chart
   const trendMonths = getTrendMonths(trendRange, today, curMonthKey, txns);
   const trendLabels = trendMonths.map((mk, i) => {
@@ -123,6 +118,19 @@ export default function Overview({ txns }: Props) {
   // Category table
   const tableMonths = getTableMonths(catRange, today, curMonthKey, txns);
   const allCats = [...new Set(txns.filter(t => t.type === 'expense' && tableMonths.includes(monthKey(t.date))).map(t => t.category))].sort();
+
+  // Largest categories at the bottom of each stacked bar
+  const barSeries = allCats
+    .map(cat => ({
+      label: cat,
+      color: CAT_MAP[cat] || '#888',
+      data: tableMonths.map(mk => txns.filter(t => t.type === 'expense' && t.category === cat && monthKey(t.date) === mk).reduce((s, t) => s + t.amount, 0)),
+    }))
+    .sort((a, b) => b.data.reduce((x, y) => x + y, 0) - a.data.reduce((x, y) => x + y, 0));
+  const barLabels = tableMonths.map((mk, i) => {
+    const step = tableMonths.length <= 13 ? 1 : tableMonths.length <= 25 ? 2 : 3;
+    return (i % step === 0 || i === tableMonths.length - 1) ? monthLabel(mk).split(' ')[0] : '';
+  });
 
   const CAT_RANGE_LABELS: Record<CatRange, string> = {
     '1m': '1M', '3m': '3M', '6m': '6M', ytd: 'YTD', '1y': '1Y', all: 'All',
@@ -172,24 +180,8 @@ export default function Overview({ txns }: Props) {
         </div>
       )}
 
-      {/* Charts row */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '280px 1fr', gap: 12, marginBottom: 12, minWidth: 0 }}>
-        <div style={{ ...card, minWidth: 0, overflow: 'hidden' }}>
-          <div style={cardTitle}>Expense Distribution</div>
-          <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 14, alignItems: isMobile ? 'stretch' : 'center' }}>
-            <DonutChart data={donutData} size={isMobile ? 130 : 150} />
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
-              {donutData.slice(0, 7).map(d => (
-                <div key={d.label} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                  <div style={{ width: 7, height: 7, borderRadius: '50%', background: d.color, flexShrink: 0 }} />
-                  <span style={{ color: 'var(--text2)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 11 }}>{d.label}</span>
-                  <span style={{ color: 'var(--text)', fontWeight: 700, flexShrink: 0, fontSize: 12 }}>€{d.value.toFixed(2)}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
+      {/* Trends */}
+      <div style={{ marginBottom: 12, minWidth: 0 }}>
         <div style={{ ...card, minWidth: 0, overflow: 'hidden' }}>
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12, gap: 8, flexWrap: 'wrap' }}>
             <div style={cardTitle}>Monthly Trends</div>
@@ -235,6 +227,11 @@ export default function Overview({ txns }: Props) {
             ))}
           </div>
         </div>
+        {tableMonths.length > 1 && (
+          <div style={{ marginBottom: 18 }}>
+            <StackedBarChart series={barSeries} labels={barLabels} tooltipLabels={tableMonths.map(monthLabel)} height={isMobile ? 180 : 220} />
+          </div>
+        )}
         <CategoryTable txns={txns} tableMonths={tableMonths} allCats={allCats} />
       </div>
     </div>
