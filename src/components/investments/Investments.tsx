@@ -4,22 +4,10 @@ import type { Investment } from '../../types';
 import type { InvRange } from '../../types';
 import { INV_PALETTE } from '../../constants/colors';
 import { DEFAULT_INVESTMENT_TYPES } from '../../constants/investmentTypes';
+import { useCategories } from '../../hooks/useCategories';
 import { monthKeyLocal, monthLabel, monthsFrom, fmtEur } from '../../utils';
 import StackedAreaChart from '../charts/StackedAreaChart';
 import Sparkline from '../charts/Sparkline';
-
-function useInvTypes() {
-  const [custom, setCustom] = useState<string[]>(() => {
-    try { return JSON.parse(localStorage.getItem('ft_inv_types') || '[]'); } catch { return []; }
-  });
-  const all = [...DEFAULT_INVESTMENT_TYPES, ...custom.filter(t => !DEFAULT_INVESTMENT_TYPES.includes(t))];
-  const add = (t: string) => {
-    const next = [...custom, t];
-    setCustom(next);
-    localStorage.setItem('ft_inv_types', JSON.stringify(next));
-  };
-  return { types: all, addType: add };
-}
 
 interface Props {
   invs: Investment[];
@@ -103,7 +91,14 @@ export default function Investments({ invs, onUpdateEntry, onAddInv, onRemoveInv
   const [showAdd,  setShowAdd]  = useState(false);
   const [newName,  setNewName]  = useState(DEFAULT_INVESTMENT_TYPES[0]);
   const [customNameInput, setCustomNameInput] = useState('');
-  const { types: invTypes, addType } = useInvTypes();
+  const { invTypes, addInvType } = useCategories();
+  const saveCustomType = async () => {
+    const name = customNameInput.trim();
+    if (!name) return;
+    await addInvType(name);
+    setNewName(name);
+    setCustomNameInput('');
+  };
 
   const allEntryMonths = [...new Set(invs.flatMap(i => i.entries.map(e => e.month)))].sort();
   const PORTFOLIO_START = '2024-09';
@@ -150,7 +145,7 @@ export default function Investments({ invs, onUpdateEntry, onAddInv, onRemoveInv
     if (tableScrollRef.current) {
       tableScrollRef.current.scrollLeft = tableScrollRef.current.scrollWidth;
     }
-  }, [tableMonths.length]);
+  }, [tableMonths.length, invs.length]);
 
   const commitEdit = async () => {
     if (editCell && editVal !== '') {
@@ -273,11 +268,11 @@ export default function Investments({ invs, onUpdateEntry, onAddInv, onRemoveInv
                 <input
                   autoFocus placeholder="Position name…" value={customNameInput}
                   onChange={e => setCustomNameInput(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter' && customNameInput.trim()) { addType(customNameInput.trim()); setNewName(customNameInput.trim()); setCustomNameInput(''); } }}
+                  onKeyDown={e => { if (e.key === 'Enter') saveCustomType(); }}
                   style={inp({ flex: 1 })}
                 />
                 <button
-                  onClick={() => { if (customNameInput.trim()) { addType(customNameInput.trim()); setNewName(customNameInput.trim()); setCustomNameInput(''); } }}
+                  onClick={saveCustomType}
                   style={{ padding: '9px 14px', border: 'none', borderRadius: 8, cursor: 'pointer', background: 'var(--accent)', color: 'var(--accent-text)', fontFamily: 'Nunito,sans-serif', fontWeight: 700 }}>
                   Save
                 </button>

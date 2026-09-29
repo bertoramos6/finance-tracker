@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useWindowSize } from '../../hooks/useWindowSize';
 import type { Transaction } from '../../types';
-import { CATEGORIES } from '../../constants/categories';
+import { useCategories } from '../../hooks/useCategories';
 import BatchAdd from './BatchAdd';
 
 const INCOME_CATS = ['Paycheck', 'Other income'];
+const CUSTOM = '__custom__';
 
 interface Props {
   userId: string;
@@ -29,14 +30,25 @@ export default function AddEntry({ userId, onAdd }: Props) {
   const [type,   setType]   = useState<'expense' | 'income'>('expense');
   const [amount, setAmount] = useState('');
   const [date,   setDate]   = useState(new Date().toISOString().slice(0, 10));
-  const [cat,    setCat]    = useState(CATEGORIES[0].name);
+  const { expenseCats, addExpenseCat } = useCategories();
+  const [cat,    setCat]    = useState(expenseCats[0].name);
+  const [newCatName, setNewCatName] = useState('');
   const [incomeCat, setIncomeCat] = useState(INCOME_CATS[0]);
   const [desc,   setDesc]   = useState('');
   const [flash,  setFlash]  = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const saveNewCat = async () => {
+    const name = newCatName.trim();
+    if (!name) return;
+    await addExpenseCat(name);
+    setCat(name);
+    setNewCatName('');
+  };
+
   const submit = async () => {
     if (!amount || isNaN(+amount) || +amount <= 0) return;
+    if (type === 'expense' && cat === CUSTOM) return;
     setLoading(true);
     try {
       await onAdd({
@@ -138,8 +150,22 @@ export default function AddEntry({ userId, onAdd }: Props) {
             <div>
               <div style={lbl}>Category</div>
               <select value={cat} onChange={e => setCat(e.target.value)} style={inp({ width: '100%' })}>
-                {CATEGORIES.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+                {expenseCats.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+                <option value={CUSTOM}>+ Add custom…</option>
               </select>
+              {cat === CUSTOM && (
+                <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                  <input
+                    autoFocus placeholder="New category name…" value={newCatName}
+                    onChange={e => setNewCatName(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') saveNewCat(); }}
+                    style={inp({ flex: 1, minWidth: 0 })}
+                  />
+                  <button onClick={saveNewCat} style={{ padding: '9px 14px', border: 'none', borderRadius: 8, cursor: 'pointer', background: 'var(--accent)', color: 'var(--accent-text)', fontFamily: 'Nunito,sans-serif', fontWeight: 700 }}>
+                    Save
+                  </button>
+                </div>
+              )}
             </div>
           )}
           {type === 'income' && (

@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { Transaction } from '../types';
+import { errorMessage } from '../utils';
 import {
   fetchTransactions,
   insertTransaction,
@@ -10,13 +11,18 @@ import {
 export function useTransactions(userId: string) {
   const [txns, setTxns] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     if (!userId) return;
+    setError(null);
     fetchTransactions()
       .then(setTxns)
+      .catch(e => setError(errorMessage(e)))
       .finally(() => setLoading(false));
   }, [userId]);
+
+  useEffect(load, [load]);
 
   const addTxn = async (t: Omit<Transaction, 'id' | 'created_at'>) => {
     const created = await insertTransaction(t, userId);
@@ -33,5 +39,5 @@ export function useTransactions(userId: string) {
     setTxns(prev => prev.filter(t => t.id !== id));
   };
 
-  return { txns, loading, addTxn, updateTxn, removeTxn };
+  return { txns, loading, error, reload: load, addTxn, updateTxn, removeTxn };
 }
