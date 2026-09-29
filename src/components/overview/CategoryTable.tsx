@@ -73,10 +73,44 @@ export default function CategoryTable({ txns, tableMonths, allCats }: Props) {
             const avgT = tots.filter(v => v > 0).reduce((a, b) => a + b, 0) / (tots.filter(v => v > 0).length || 1);
             return (
               <tr style={{ borderTop: '2px solid var(--border)', fontWeight: 700 }}>
-                <td style={{ padding: '10px 12px 10px 0', color: 'var(--text)' }}>Total</td>
+                <td style={{ padding: '10px 12px 10px 0', color: 'var(--text)' }}>Total expenses</td>
                 {tots.map((v, i) => <td key={i} style={{ padding: '10px 8px', textAlign: 'right', color: 'var(--text)' }}>{fmtEur(v)}</td>)}
                 <td style={{ padding: '10px 0 10px 8px', textAlign: 'right', color: 'var(--text2)', fontStyle: 'italic' }}>{fmtEur(avgT)}</td>
               </tr>
+            );
+          })()}
+          {(() => {
+            const inc = tableMonths.map(mk => txns.filter(t => monthKey(t.date) === mk && t.type === 'income').reduce((s, t) => s + t.amount, 0));
+            const exp = tableMonths.map(mk => txns.filter(t => monthKey(t.date) === mk && t.type === 'expense').reduce((s, t) => s + t.amount, 0));
+            const net = inc.map((v, i) => v - exp[i]);
+            const active = net.filter((_, i) => inc[i] > 0 || exp[i] > 0);
+            const incNz = inc.filter(v => v > 0);
+            const avgInc = incNz.length ? incNz.reduce((a, b) => a + b, 0) / incNz.length : 0;
+            const avgNet = active.length ? active.reduce((a, b) => a + b, 0) / active.length : 0;
+            const totInc = inc.reduce((a, b) => a + b, 0);
+            const totalRate = totInc > 0 ? net.reduce((a, b) => a + b, 0) / totInc * 100 : null;
+            const signed = (v: number) => (v >= 0 ? '+' : '-') + fmtEur(v);
+            const netColor = (v: number) => v >= 0 ? 'var(--green)' : 'var(--red)';
+            const cell: React.CSSProperties = { padding: '8px', textAlign: 'right' };
+            const avgCell: React.CSSProperties = { padding: '8px 0 8px 8px', textAlign: 'right', fontStyle: 'italic' };
+            return (
+              <>
+                <tr style={{ borderTop: '1px solid var(--border)' }}>
+                  <td style={{ padding: '8px 12px 8px 0', fontWeight: 600, color: 'var(--text)' }}>Income</td>
+                  {inc.map((v, i) => <td key={i} style={{ ...cell, color: v > 0 ? 'var(--text)' : 'var(--text2)' }}>{v > 0 ? fmtEur(v) : '—'}</td>)}
+                  <td style={{ ...avgCell, color: 'var(--text2)' }}>{avgInc > 0 ? fmtEur(avgInc) : '—'}</td>
+                </tr>
+                <tr style={{ borderTop: '1px solid var(--border)', fontWeight: 700 }}>
+                  <td style={{ padding: '8px 12px 8px 0', color: 'var(--text)' }}>Net saved</td>
+                  {net.map((v, i) => <td key={i} style={{ ...cell, color: inc[i] || exp[i] ? netColor(v) : 'var(--text2)' }}>{inc[i] || exp[i] ? signed(v) : '—'}</td>)}
+                  <td style={{ ...avgCell, color: netColor(avgNet) }}>{active.length ? signed(avgNet) : '—'}</td>
+                </tr>
+                <tr style={{ borderTop: '1px solid var(--border)' }}>
+                  <td style={{ padding: '8px 12px 8px 0', fontWeight: 600, color: 'var(--text)' }}>Savings rate</td>
+                  {net.map((v, i) => <td key={i} style={{ ...cell, color: inc[i] > 0 ? netColor(v) : 'var(--text2)' }}>{inc[i] > 0 ? `${Math.round(v / inc[i] * 100)}%` : '—'}</td>)}
+                  <td style={{ ...avgCell, color: totalRate === null ? 'var(--text2)' : netColor(totalRate) }}>{totalRate === null ? '—' : `${Math.round(totalRate)}%`}</td>
+                </tr>
+              </>
             );
           })()}
         </tbody>
